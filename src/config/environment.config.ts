@@ -1,5 +1,6 @@
 import { SecretsManagerService } from '../services/security/secrets-manager.service';
 import * as crypto from 'crypto';
+import * as fs from 'fs';
 
 export interface DatabaseConfig {
   host: string;

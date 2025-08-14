@@ -526,7 +526,7 @@ export class DatabaseSecurityService {
     };
     details: {
       auditLogs: SecurityAuditLog[];
-      suspiciousActivity: Awaited<ReturnType<typeof this.detectSuspiciousActivity>>;
+      suspiciousActivity: Awaited<ReturnType<DatabaseSecurityService['detectSuspiciousActivity']>>;
       connectionStats: { userId: string; connections: number; lastAccess: Date }[];
     };
     recommendations: string[];

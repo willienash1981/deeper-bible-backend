@@ -94,4 +94,4 @@ models/
 .vuepress/dist/
 .serverless/
 .fusebox/
-.dynamodb/
+.dynamodb/node_modules/

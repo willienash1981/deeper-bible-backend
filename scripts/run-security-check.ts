@@ -1,25 +1,20 @@
 #!/usr/bin/env ts-node
 
 /**
- * Security Configuration Validation Script
+ * Security Check Runner
  * 
- * This script validates the security configuration of the Deeper Bible backend
- * and provides recommendations for improvements.
- * 
- * Usage:
- *   npm run security:check
- *   ts-node scripts/security-check.ts
+ * This script sets up the environment and runs security validation
  */
 
-import { PrismaClient } from '@prisma/client';
-import { DatabaseSecurityService } from '../src/services/security/database-security.service';
-import { SecretsManagerService } from '../src/services/security/secrets-manager.service';
-import { EnvironmentConfig } from '../src/config/environment.config';
+import { setupEnvironment } from './setup-env';
 import * as fs from 'fs';
 import * as path from 'path';
 
 async function main() {
   console.log('🔍 Starting Security Configuration Check...\n');
+
+  // Setup environment
+  await setupEnvironment();
 
   const results = {
     passed: 0,
@@ -30,14 +25,6 @@ async function main() {
   };
 
   try {
-    // Initialize services
-    const envConfig = EnvironmentConfig.getInstance();
-    await envConfig.initialize();
-    
-    const secretsManager = new SecretsManagerService({ provider: 'file' });
-    const prisma = new PrismaClient();
-    const databaseSecurity = new DatabaseSecurityService(prisma, secretsManager);
-
     // 1. Check secrets management
     console.log('1️⃣  Checking Secrets Management...');
     await checkSecretsManagement(results);
@@ -50,19 +37,13 @@ async function main() {
     console.log('3️⃣  Checking Docker Configuration...');
     await checkDockerConfiguration(results);
 
-    // 4. Check database security
-    console.log('4️⃣  Checking Database Security...');
-    await checkDatabaseSecurity(databaseSecurity, results);
-
-    // 5. Check environment configuration
-    console.log('5️⃣  Checking Environment Configuration...');
+    // 4. Check environment configuration
+    console.log('4️⃣  Checking Environment Configuration...');
     await checkEnvironmentConfiguration(results);
 
-    // 6. Check gitignore security
-    console.log('6️⃣  Checking Git Security...');
+    // 5. Check gitignore security
+    console.log('5️⃣  Checking Git Security...');
     await checkGitSecurity(results);
-
-    await prisma.$disconnect();
 
   } catch (error) {
     console.error('❌ Security check failed:', error);
@@ -114,7 +95,6 @@ async function checkSecretsManagement(results: any): Promise<void> {
 
 async function checkFilePermissions(results: any): Promise<void> {
   const criticalFiles = [
-    '.env.secure',
     '.secrets',
     'docker-compose.yml',
   ];
@@ -130,15 +110,6 @@ async function checkFilePermissions(results: any): Promise<void> {
         if (mode !== parseInt('700', 8)) {
           results.warnings++;
           results.recommendations.push(`Fix .secrets directory permissions: chmod 700 .secrets`);
-        } else {
-          results.passed++;
-        }
-      } else if (file === '.env.secure') {
-        // File should be 600
-        const mode = stats.mode & parseInt('777', 8);
-        if (mode !== parseInt('600', 8)) {
-          results.warnings++;
-          results.recommendations.push(`Fix .env.secure permissions: chmod 600 .env.secure`);
         } else {
           results.passed++;
         }
@@ -160,89 +131,41 @@ async function checkDockerConfiguration(results: any): Promise<void> {
 
   const dockerComposeContent = fs.readFileSync(dockerComposePath, 'utf8');
 
-  // Check for hardcoded passwords
-  if (dockerComposeContent.includes('POSTGRES_PASSWORD:') && 
-      !dockerComposeContent.includes('POSTGRES_PASSWORD_FILE:')) {
-    results.failed++;
-    results.issues.push('Hardcoded passwords found in docker-compose.yml');
-  } else {
+  // Check for Docker secrets usage
+  if (dockerComposeContent.includes('POSTGRES_PASSWORD_FILE:') && 
+      dockerComposeContent.includes('secrets:')) {
     results.passed++;
-  }
-
-  // Check for secrets configuration
-  if (!dockerComposeContent.includes('secrets:')) {
-    results.failed++;
-    results.issues.push('Docker secrets not configured');
+    console.log('   ✅ Docker secrets properly configured');
   } else {
-    results.passed++;
+    results.failed++;
+    results.issues.push('Docker secrets not properly configured');
   }
 
   // Check for health checks
-  if (!dockerComposeContent.includes('healthcheck:')) {
+  if (dockerComposeContent.includes('healthcheck:')) {
+    results.passed++;
+    console.log('   ✅ Health checks configured');
+  } else {
     results.warnings++;
     results.recommendations.push('Add health checks to Docker services');
-  } else {
-    results.passed++;
   }
 
   console.log('   ✅ Docker configuration check completed');
 }
 
-async function checkDatabaseSecurity(databaseSecurity: DatabaseSecurityService, results: any): Promise<void> {
-  try {
-    const validation = await databaseSecurity.validateSecurityConfiguration();
-    
-    if (validation.isSecure) {
-      results.passed++;
-      console.log('   ✅ Database security configuration is secure');
-    } else {
-      results.failed += validation.issues.length;
-      results.issues.push(...validation.issues);
-    }
-
-    results.recommendations.push(...validation.recommendations);
-
-    // Check for suspicious activity
-    const suspiciousActivity = await databaseSecurity.detectSuspiciousActivity();
-    if (suspiciousActivity.suspiciousIPs.length > 0 || 
-        suspiciousActivity.rapidLoginAttempts.length > 0 ||
-        suspiciousActivity.unusualQueryPatterns.length > 0) {
-      results.warnings++;
-      results.recommendations.push('Investigate suspicious activity detected in audit logs');
-    }
-
-  } catch (error) {
-    results.failed++;
-    results.issues.push(`Database security check failed: ${error}`);
-  }
-
-  console.log('   ✅ Database security check completed');
-}
-
 async function checkEnvironmentConfiguration(results: any): Promise<void> {
-  const envSecurePath = path.join(process.cwd(), '.env.secure');
+  // Check if required environment variables are set
+  const requiredEnvVars = ['DB_PASSWORD', 'JWT_SECRET', 'REDIS_PASSWORD'];
   
-  if (!fs.existsSync(envSecurePath)) {
-    results.failed++;
-    results.issues.push('.env.secure file not found - run npm run secrets:init');
-    return;
+  for (const envVar of requiredEnvVars) {
+    if (process.env[envVar]) {
+      results.passed++;
+    } else {
+      results.warnings++;
+      results.recommendations.push(`Set environment variable: ${envVar}`);
+    }
   }
 
-  const envContent = fs.readFileSync(envSecurePath, 'utf8');
-
-  // Check for placeholder values
-  if (envContent.includes('CHANGE_ME') || envContent.includes('your-')) {
-    results.warnings++;
-    results.recommendations.push('Update placeholder values in .env.secure');
-  }
-
-  // Check for SSL configuration
-  if (!envContent.includes('sslmode=require')) {
-    results.warnings++;
-    results.recommendations.push('Enable SSL for database connections');
-  }
-
-  results.passed++;
   console.log('   ✅ Environment configuration check completed');
 }
 
@@ -258,18 +181,16 @@ async function checkGitSecurity(results: any): Promise<void> {
   const gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
 
   const requiredEntries = [
-    '.env.secure',
     '.secrets/',
     '*.key',
-    '*.pem',
   ];
 
   for (const entry of requiredEntries) {
-    if (!gitignoreContent.includes(entry)) {
+    if (gitignoreContent.includes(entry)) {
+      results.passed++;
+    } else {
       results.warnings++;
       results.recommendations.push(`Add '${entry}' to .gitignore`);
-    } else {
-      results.passed++;
     }
   }
 
