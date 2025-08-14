@@ -1,0 +1,918 @@
+{
+  "info": {
+    "name": "Deeper Bible API",
+    "description": "Complete collection for the Deeper Bible Backend API with authentication, analysis, symbols, and analytics endpoints.",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://api.deeperbible.com",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"SecurePassword123!\",\n  \"name\": \"{{$randomFirstName}} {{$randomLastName}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Register a new user account"
+          },
+          "response": [
+            {
+              "name": "Successful Registration",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"name\": \"John Doe\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/register",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "register"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"message\": \"User registered successfully\",\n  \"user\": {\n    \"id\": \"123e4567-e89b-12d3-a456-426614174000\",\n    \"email\": \"john@example.com\",\n    \"name\": \"John Doe\",\n    \"createdAt\": \"2024-01-15T10:30:00Z\"\n  },\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const jsonData = pm.response.json();",
+                  "  pm.collectionVariables.set('auth_token', jsonData.token);",
+                  "  pm.collectionVariables.set('refresh_token', jsonData.refreshToken);",
+                  "  console.log('Auth token set:', jsonData.token.substring(0, 20) + '...');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Authenticate user and get access token"
+          },
+          "response": [
+            {
+              "name": "Successful Login",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/login",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "login"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"message\": \"Login successful\",\n  \"user\": {\n    \"id\": \"123e4567-e89b-12d3-a456-426614174000\",\n    \"email\": \"test@example.com\",\n    \"name\": \"Test User\"\n  },\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"refreshToken\": \"refresh_token_here\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const jsonData = pm.response.json();",
+                  "  pm.collectionVariables.set('auth_token', jsonData.token);",
+                  "  console.log('Token refreshed successfully');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "refresh"]
+            },
+            "description": "Refresh access token using refresh token"
+          }
+        }
+      ],
+      "description": "Authentication endpoints for user registration, login, and token management"
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "health"]
+            },
+            "description": "Check API health status"
+          },
+          "response": [
+            {
+              "name": "Healthy Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/api/health",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "health"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"healthy\",\n  \"timestamp\": \"2024-01-15T10:30:00Z\",\n  \"version\": \"1.0.0\",\n  \"dependencies\": {\n    \"database\": \"connected\",\n    \"redis\": \"connected\",\n    \"openai\": \"available\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/users/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "profile"]
+            },
+            "description": "Get current user's profile information"
+          },
+          "response": [
+            {
+              "name": "User Profile",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/api/users/profile",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "users", "profile"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174000\",\n  \"email\": \"user@example.com\",\n  \"name\": \"John Doe\",\n  \"createdAt\": \"2024-01-15T10:30:00Z\",\n  \"preferences\": {\n    \"defaultTranslation\": \"ESV\",\n    \"enableNotifications\": true\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Updated Doe\",\n  \"preferences\": {\n    \"defaultTranslation\": \"NIV\",\n    \"enableNotifications\": false\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "profile"]
+            },
+            "description": "Update current user's profile"
+          }
+        },
+        {
+          "name": "Delete Account",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/api/users/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "profile"]
+            },
+            "description": "Delete current user's account (irreversible)"
+          }
+        }
+      ],
+      "description": "User profile management endpoints"
+    },
+    {
+      "name": "Analysis",
+      "item": [
+        {
+          "name": "Basic Theological Analysis",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"verse_range\": \"John 3:16\",\n  \"translation\": \"ESV\",\n  \"analysis_type\": [\"theological\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/analysis",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analysis"]
+            },
+            "description": "Perform basic theological analysis of a Bible verse"
+          },
+          "response": [
+            {
+              "name": "Analysis Result",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"verse_range\": \"John 3:16\",\n  \"translation\": \"ESV\",\n  \"analysis_type\": [\"theological\"]\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/analysis",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "analysis"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"analysis-123\",\n  \"verse_range\": \"John 3:16\",\n  \"translation\": \"ESV\",\n  \"text\": \"For God so loved the world, that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.\",\n  \"analysis\": {\n    \"theological\": {\n      \"themes\": [\"salvation\", \"grace\", \"love\", \"sacrifice\"],\n      \"doctrines\": [\"justification\", \"redemption\", \"propitiation\"],\n      \"interpretation\": \"This verse emphasizes God's love and the gift of salvation through Christ...\"\n    }\n  },\n  \"confidence_score\": 0.92,\n  \"processing_time_ms\": 1250,\n  \"created_at\": \"2024-01-15T10:30:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Comprehensive Analysis with Symbols",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"verse_range\": \"Revelation 5:6\",\n  \"translation\": \"ESV\",\n  \"analysis_type\": [\"theological\", \"historical\", \"symbolic\"],\n  \"denomination\": \"protestant\",\n  \"include_symbols\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/analysis",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analysis"]
+            },
+            "description": "Perform comprehensive analysis including theological, historical, and symbolic insights"
+          }
+        },
+        {
+          "name": "Analysis with Denominational Perspective",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"verse_range\": \"Romans 8:28-30\",\n  \"translation\": \"ESV\",\n  \"analysis_type\": [\"theological\"],\n  \"denomination\": \"reformed\",\n  \"include_symbols\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/analysis",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analysis"]
+            },
+            "description": "Analyze verses from a specific denominational perspective"
+          }
+        },
+        {
+          "name": "Get Analysis History",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/analysis/history?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analysis", "history"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (default: 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Items per page (default: 20, max: 100)"
+                }
+              ]
+            },
+            "description": "Get user's analysis history with pagination"
+          },
+          "response": [
+            {
+              "name": "Analysis History",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/api/analysis/history?page=1&limit=10",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "analysis", "history"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"analyses\": [\n    {\n      \"id\": \"analysis-123\",\n      \"verse_range\": \"John 3:16\",\n      \"translation\": \"ESV\",\n      \"confidence_score\": 0.92,\n      \"created_at\": \"2024-01-15T10:30:00Z\"\n    }\n  ],\n  \"pagination\": {\n    \"current_page\": 1,\n    \"total_pages\": 5,\n    \"total_items\": 47,\n    \"items_per_page\": 10\n  }\n}"
+            }
+          ]
+        }
+      ],
+      "description": "Bible verse analysis endpoints with AI-powered theological, historical, and symbolic insights"
+    },
+    {
+      "name": "Symbols",
+      "item": [
+        {
+          "name": "Detect Symbols",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"The lamb stood before the throne with seven seals\",\n  \"context\": \"Revelation 5\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/symbols/detect",
+              "host": ["{{base_url}}"],
+              "path": ["api", "symbols", "detect"]
+            },
+            "description": "Detect biblical symbols in given text"
+          },
+          "response": [
+            {
+              "name": "Symbols Detected",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"text\": \"The lamb stood before the throne with seven seals\",\n  \"context\": \"Revelation 5\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/symbols/detect",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "symbols", "detect"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"symbols\": [\n    {\n      \"name\": \"lamb\",\n      \"meaning\": \"Represents Christ's sacrificial nature and innocence\",\n      \"biblical_context\": \"Used throughout scripture to represent sacrifice and purity\",\n      \"occurrences\": 23,\n      \"related_verses\": [\"John 1:29\", \"Revelation 5:6\", \"Isaiah 53:7\"]\n    },\n    {\n      \"name\": \"throne\",\n      \"meaning\": \"Symbol of divine authority and heavenly rule\",\n      \"biblical_context\": \"Represents God's sovereignty and judgment seat\",\n      \"occurrences\": 45,\n      \"related_verses\": [\"Revelation 4:2\", \"Psalm 45:6\", \"Hebrews 4:16\"]\n    },\n    {\n      \"name\": \"seven\",\n      \"meaning\": \"Number representing completeness and perfection\",\n      \"biblical_context\": \"Used throughout scripture to denote divine completeness\",\n      \"occurrences\": 287,\n      \"related_verses\": [\"Revelation 1:4\", \"Genesis 2:2\", \"Joshua 6:4\"]\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Symbol Relationships",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/symbols/relationships?symbol=lamb",
+              "host": ["{{base_url}}"],
+              "path": ["api", "symbols", "relationships"],
+              "query": [
+                {
+                  "key": "symbol",
+                  "value": "lamb",
+                  "description": "Symbol to find relationships for"
+                }
+              ]
+            },
+            "description": "Get relationships between biblical symbols"
+          },
+          "response": [
+            {
+              "name": "Symbol Relationships",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/api/symbols/relationships?symbol=lamb",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "symbols", "relationships"],
+                  "query": [
+                    {
+                      "key": "symbol",
+                      "value": "lamb"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"symbol\": \"lamb\",\n  \"relationships\": [\n    {\n      \"related_symbol\": \"shepherd\",\n      \"relationship_type\": \"complementary\",\n      \"strength\": 0.95,\n      \"description\": \"The lamb and shepherd represent the dual nature of Christ as both the sacrifice and the guide\"\n    },\n    {\n      \"related_symbol\": \"lion\",\n      \"relationship_type\": \"contrasting\",\n      \"strength\": 0.87,\n      \"description\": \"Lion represents Christ's power and majesty, while lamb represents humility and sacrifice\"\n    },\n    {\n      \"related_symbol\": \"altar\",\n      \"relationship_type\": \"hierarchical\",\n      \"strength\": 0.82,\n      \"description\": \"The lamb is offered upon the altar, representing sacrificial worship\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Complex Symbol Analysis",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"I saw in the right hand of him who was seated on the throne a scroll written within and on the back, sealed with seven seals. And I saw a mighty angel proclaiming with a loud voice, 'Who is worthy to open the scroll and break its seals?'\",\n  \"context\": \"Revelation 5:1-2\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/symbols/detect",
+              "host": ["{{base_url}}"],
+              "path": ["api", "symbols", "detect"]
+            },
+            "description": "Analyze complex apocalyptic imagery with multiple symbols"
+          }
+        }
+      ],
+      "description": "Biblical symbol detection and relationship analysis endpoints"
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Get Usage Analytics - Monthly",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/analytics/usage?period=month",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analytics", "usage"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "month",
+                  "description": "Time period: day, week, month, year"
+                }
+              ]
+            },
+            "description": "Get monthly usage analytics for the current user"
+          },
+          "response": [
+            {
+              "name": "Monthly Usage",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/api/analytics/usage?period=month",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "analytics", "usage"],
+                  "query": [
+                    {
+                      "key": "period",
+                      "value": "month"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"period\": \"month\",\n  \"total_requests\": 245,\n  \"successful_requests\": 240,\n  \"error_rate\": 0.02,\n  \"average_response_time\": 1.25,\n  \"most_analyzed_books\": [\n    {\n      \"book\": \"John\",\n      \"count\": 45\n    },\n    {\n      \"book\": \"Romans\",\n      \"count\": 38\n    },\n    {\n      \"book\": \"Revelation\",\n      \"count\": 32\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Usage Analytics - Weekly",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/analytics/usage?period=week",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analytics", "usage"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "week"
+                }
+              ]
+            },
+            "description": "Get weekly usage analytics"
+          }
+        },
+        {
+          "name": "Get Usage Analytics - Daily",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/analytics/usage?period=day",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analytics", "usage"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "day"
+                }
+              ]
+            },
+            "description": "Get daily usage analytics"
+          }
+        }
+      ],
+      "description": "User analytics and usage statistics endpoints"
+    },
+    {
+      "name": "Error Scenarios",
+      "item": [
+        {
+          "name": "Unauthorized Request",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "invalid_token",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/users/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "profile"]
+            },
+            "description": "Test with invalid authentication token"
+          },
+          "response": [
+            {
+              "name": "401 Unauthorized",
+              "originalRequest": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "invalid_token",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/api/users/profile",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "users", "profile"]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"UNAUTHORIZED\",\n  \"message\": \"Valid authentication token required\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Invalid Analysis Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"translation\": \"ESV\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/analysis",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analysis"]
+            },
+            "description": "Test with missing required field (verse_range)"
+          },
+          "response": [
+            {
+              "name": "400 Bad Request",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"translation\": \"ESV\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/analysis",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "analysis"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"VALIDATION_ERROR\",\n  \"message\": \"verse_range is required\",\n  \"details\": {\n    \"field\": \"verse_range\",\n    \"code\": \"required\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Rate Limit Exceeded",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"verse_range\": \"John 3:16\",\n  \"translation\": \"ESV\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/analysis",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analysis"]
+            },
+            "description": "Simulate rate limit exceeded (make many requests quickly to test)"
+          },
+          "response": [
+            {
+              "name": "429 Too Many Requests",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"verse_range\": \"John 3:16\",\n  \"translation\": \"ESV\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/analysis",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "analysis"]
+                }
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "X-RateLimit-Limit",
+                  "value": "100"
+                },
+                {
+                  "key": "X-RateLimit-Remaining",
+                  "value": "0"
+                },
+                {
+                  "key": "X-RateLimit-Reset",
+                  "value": "1705315800"
+                }
+              ],
+              "body": "{\n  \"error\": \"RATE_LIMIT_EXCEEDED\",\n  \"message\": \"Too many requests. Please try again later.\"\n}"
+            }
+          ]
+        }
+      ],
+      "description": "Examples of error scenarios and their responses"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set base URL if not already set",
+          "if (!pm.collectionVariables.get('base_url')) {",
+          "  pm.collectionVariables.set('base_url', 'https://api.deeperbible.com');",
+          "}",
+          "",
+          "// Log request for debugging",
+          "console.log('Making request to:', pm.request.url.toString());"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test for all requests",
+          "pm.test('Response time is acceptable', function () {",
+          "  pm.expect(pm.response.responseTime).to.be.below(10000);",
+          "});",
+          "",
+          "pm.test('Response has correct content type', function () {",
+          "  if (pm.response.code !== 204) {", 
+          "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+          "  }",
+          "});",
+          "",
+          "// Log response for debugging",
+          "if (pm.response.code >= 400) {",
+          "  console.error('Request failed:', pm.response.json());",
+          "}"
+        ]
+      }
+    }
+  ]
+}

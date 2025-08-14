@@ -288,11 +288,18 @@ render deploy --service deeper-bible-api
 ## 📚 Documentation
 
 ### Available Documentation
-- 📖 [API Documentation](./docs/api.md)
-- 🚀 [Deployment Guide](./docs/DEPLOYMENT.md)
-- 🔧 [Development Setup](./docs/development.md)
-- 🏗️ [Architecture Overview](./docs/architecture.md)
-- 🔒 [Security Guide](./docs/security.md)
+- 📖 [API Documentation](./docs/api.md) - Complete API reference with examples
+- 🚀 [Deployment Guide](./docs/DEPLOYMENT.md) - Production deployment procedures
+- 🔧 [Development Guide](./docs/development/README.md) - Local setup and development workflow
+- 🏗️ [Architecture Overview](./docs/architecture/README.md) - System design and decisions
+- 🔒 [Security Guide](./docs/security.md) - Security implementation details
+- ⚙️ [Operations Guide](./docs/operations/README.md) - Monitoring, backup, and maintenance
+- 💡 [Code Examples](./docs/examples/README.md) - Client implementation examples
+
+### Quick Links
+- [OpenAPI Specification](./docs/api/openapi.yaml)
+- [Postman Collection](./docs/examples/postman-collection.json)
+- [Troubleshooting Guide](./docs/development/TROUBLESHOOTING.md)
 
 ## 📞 Support
 
