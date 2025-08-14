@@ -1,6 +1,8 @@
+import { BiblicalAnalysis } from '../../shared/types/xml-types';
+
 export interface LLMAnalysisResponse {
   rawXml: string;
-  parsedAnalysis: any; // This will be BiblicalAnalysis from xml-types
+  parsedAnalysis: BiblicalAnalysis;
   tokensUsed: number;
   cost: number;
   model: string;

@@ -95,3 +95,4 @@ models/
 .serverless/
 .fusebox/
 .dynamodb/node_modules/
+.secrets/
