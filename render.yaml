@@ -1,0 +1,209 @@
+# Render.com Infrastructure as Code Configuration
+# This file defines the complete infrastructure for Deeper Bible Backend
+
+databases:
+  # Production Database
+  - name: deeper-bible-db
+    databaseName: deeper_bible
+    user: deeper_bible_user
+    region: oregon
+    plan: standard # Production-grade database
+    ipAllowList: [] # Configure IP restrictions if needed
+    highAvailability: true
+    readReplicas: 1
+
+  # Staging Database
+  - name: deeper-bible-db-staging
+    databaseName: deeper_bible_staging
+    user: deeper_bible_staging_user
+    region: oregon
+    plan: starter
+    ipAllowList: []
+
+services:
+  # Production API Service
+  - type: web
+    name: deeper-bible-api
+    runtime: docker
+    region: oregon
+    plan: standard # Production-grade service
+    scaling:
+      minInstances: 2
+      maxInstances: 10
+      targetCPUPercent: 70
+      targetMemoryPercent: 80
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeploy: true # Auto-deploy on push to main branch
+    branch: main
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: deeper-bible-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: deeper-bible-redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 24h
+      - key: OPENAI_API_KEY
+        sync: false # Set manually in Render dashboard
+      - key: GOOGLE_CLIENT_ID
+        sync: false # Set manually in Render dashboard
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false # Set manually in Render dashboard
+      - key: LOG_LEVEL
+        value: info
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 100
+      - key: CORS_ORIGINS
+        value: https://deeperbible.com,https://www.deeperbible.com
+      - key: API_VERSION
+        value: v1
+      - key: MAX_FILE_SIZE
+        value: 10485760
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: COOKIE_SECURE
+        value: true
+      - key: TRUST_PROXY
+        value: true
+
+  # Staging API Service
+  - type: web
+    name: deeper-bible-api-staging
+    runtime: docker
+    region: oregon
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeploy: true
+    branch: develop
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: staging
+      - key: PORT
+        value: 3000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: deeper-bible-db-staging
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: deeper-bible-redis-staging
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 24h
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: LOG_LEVEL
+        value: debug
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 200
+      - key: CORS_ORIGINS
+        value: https://staging.deeperbible.com,http://localhost:3000,http://localhost:3001
+      - key: API_VERSION
+        value: v1
+      - key: MAX_FILE_SIZE
+        value: 10485760
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: COOKIE_SECURE
+        value: true
+      - key: TRUST_PROXY
+        value: true
+
+  # Background Job Worker - Commented out until needed
+  # Uncomment and configure when background job processing is required
+  # - type: worker
+  #   name: deeper-bible-worker
+  #   runtime: docker
+  #   region: oregon
+  #   plan: starter
+  #   dockerfilePath: ./Dockerfile
+  #   dockerContext: .
+  #   autoDeploy: true
+  #   branch: main
+  #   dockerCommand: node dist/worker.js
+  #   envVars:
+  #     - key: NODE_ENV
+  #       value: production
+  #     - key: DATABASE_URL
+  #       fromDatabase:
+  #         name: deeper-bible-db
+  #         property: connectionString
+  #     - key: REDIS_URL
+  #       fromService:
+  #         type: redis
+  #         name: deeper-bible-redis
+  #         property: connectionString
+
+  # Redis Cache for Production
+  - type: redis
+    name: deeper-bible-redis
+    region: oregon
+    plan: standard # Production-grade Redis
+    ipAllowList: []
+    maxmemoryPolicy: allkeys-lru
+    highAvailability: true
+
+  # Redis Cache for Staging
+  - type: redis
+    name: deeper-bible-redis-staging
+    region: oregon
+    plan: starter
+    ipAllowList: []
+    maxmemoryPolicy: allkeys-lru
+
+# Cron Jobs
+cronJobs:
+  # Database Backup Job
+  - name: deeper-bible-db-backup
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    schedule: "0 3 * * *" # Daily at 3 AM UTC
+    dockerCommand: npm run backup:db
+    branch: main
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: deeper-bible-db
+          property: connectionString
+      - key: BACKUP_STORAGE_URL
+        sync: false # Set S3 or cloud storage URL
+
+  # Health Check Monitor
+  - name: deeper-bible-health-monitor
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    schedule: "*/5 * * * *" # Every 5 minutes
+    dockerCommand: npm run monitor:health
+    branch: main
+    envVars:
+      - key: MONITORING_ENDPOINTS
+        value: https://api.deeperbible.com/health,https://staging.deeperbible.com/health
+      - key: SLACK_WEBHOOK_URL
+        sync: false # Set in Render dashboard

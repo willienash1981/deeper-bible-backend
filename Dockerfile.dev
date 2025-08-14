@@ -1,0 +1,29 @@
+# Development Dockerfile for Deeper Bible Backend
+# Includes development tools and hot-reload support
+
+FROM node:20-alpine
+
+# Install development tools
+RUN apk add --no-cache \
+    git \
+    bash \
+    curl \
+    postgresql-client
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY tsconfig*.json ./
+
+# Install all dependencies (including dev)
+RUN npm ci
+
+# Copy source code (will be overridden by volume mount in docker-compose)
+COPY . .
+
+# Expose application and debugger ports
+EXPOSE 3000 9229
+
+# Default command for development
+CMD ["npm", "run", "dev"]

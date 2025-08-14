@@ -1,0 +1,216 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enum for Testament
+enum Testament {
+  OLD
+  NEW
+}
+
+// Enum for Report Status
+enum ReportStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CACHED
+}
+
+// Enum for Report Type
+enum ReportType {
+  DEEPER_ANALYSIS
+  HISTORICAL_CONTEXT
+  SYMBOLIC_PATTERNS
+  CROSS_REFERENCE
+  THEOLOGICAL_THEMES
+}
+
+// User Model - for future authentication
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  reports   Report[]
+  favorites Favorite[]
+  history   History[]
+  
+  @@index([email])
+}
+
+// Bible Book Model
+model Book {
+  id           String    @id @default(cuid())
+  bookNumber   Int       @unique // 1-66
+  name         String    @unique
+  abbr         String    @unique // 3-letter abbreviation
+  testament    Testament
+  chapterCount Int
+  bookOrder    Int       // Order in the Bible
+  description  String?   // Brief description of the book
+  author       String?   // Traditional author
+  dateWritten  String?   // Approximate date written
+  
+  // Relations
+  verses       Verse[]
+  reports      Report[]
+  favorites    Favorite[]
+  
+  @@index([bookNumber])
+  @@index([testament])
+  @@index([bookOrder])
+}
+
+// Bible Verse Model
+model Verse {
+  id          String   @id @default(cuid())
+  bookId      String
+  chapter     Int
+  verseNumber Int
+  text        String   @db.Text
+  keywords    String[] // Array of important keywords
+  
+  // Relations
+  book        Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  
+  // Composite unique constraint
+  @@unique([bookId, chapter, verseNumber])
+  @@index([bookId, chapter])
+  @@index([keywords])
+}
+
+// Analysis Report Model
+model Report {
+  id             String       @id @default(cuid())
+  bookId         String
+  chapter        Int
+  verseStart     Int
+  verseEnd       Int
+  reportType     ReportType
+  status         ReportStatus @default(PENDING)
+  content        Json?        // Structured JSON content
+  rawContent     String?      @db.Text // Raw text content
+  userId         String?
+  
+  // Metadata
+  tokens         Int?         // Token count for the analysis
+  cost           Float?       // Cost in USD
+  model          String?      // AI model used
+  promptVersion  String?      // Version of prompt used
+  confidence     Float?       // Confidence score 0-1
+  processingTime Int?         // Processing time in milliseconds
+  
+  // Timestamps
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  completedAt    DateTime?
+  expiresAt      DateTime?    // For cache expiration
+  
+  // Relations
+  book           Book         @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  // Indexes for performance
+  @@unique([bookId, chapter, verseStart, verseEnd, reportType])
+  @@index([bookId, chapter])
+  @@index([status])
+  @@index([reportType])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([expiresAt])
+}
+
+// User Favorites Model
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  bookId    String
+  chapter   Int?
+  verse     Int?
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+  
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, bookId, chapter, verse])
+  @@index([userId])
+  @@index([bookId])
+}
+
+// User History Model
+model History {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String   // "viewed", "analyzed", "favorited"
+  bookName   String
+  chapter    Int?
+  verse      Int?
+  metadata   Json?    // Additional context
+  createdAt  DateTime @default(now())
+  
+  // Relations
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, createdAt])
+  @@index([action])
+}
+
+// Symbol Pattern Model (for deeper analysis)
+model SymbolPattern {
+  id          String   @id @default(cuid())
+  symbol      String   @unique
+  category    String   // "number", "color", "animal", "object", etc.
+  meaning     String   @db.Text
+  occurrences Int      @default(0)
+  contexts    Json     // Array of verse references
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([category])
+  @@index([occurrences])
+}
+
+// Cross Reference Model
+model CrossReference {
+  id           String   @id @default(cuid())
+  sourceBook   String
+  sourceChapter Int
+  sourceVerse  Int
+  targetBook   String
+  targetChapter Int
+  targetVerse  Int
+  relationship String   // "quotes", "alludes", "parallels", "fulfills"
+  confidence   Float    // 0-1 confidence score
+  
+  @@unique([sourceBook, sourceChapter, sourceVerse, targetBook, targetChapter, targetVerse])
+  @@index([sourceBook, sourceChapter, sourceVerse])
+  @@index([targetBook, targetChapter, targetVerse])
+  @@index([relationship])
+}
+
+// Cache Management Model
+model CacheEntry {
+  id         String   @id @default(cuid())
+  key        String   @unique
+  value      Json
+  ttl        Int      // Time to live in seconds
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+  
+  @@index([key])
+  @@index([expiresAt])
+}

@@ -1,0 +1,200 @@
+# Alertmanager Configuration for Deeper Bible API
+global:
+  smtp_smarthost: 'localhost:587'
+  smtp_from: 'alerts@deeperbible.com'
+  smtp_auth_username: 'alerts@deeperbible.com'
+  smtp_auth_password_file: '/etc/alertmanager/secrets/smtp_password'
+
+# Alert routing configuration
+route:
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 1h
+  receiver: 'default-receiver'
+  routes:
+    # Critical alerts go to on-call team immediately
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 5s
+      repeat_interval: 15m
+      
+    # Database alerts
+    - match:
+        service: database
+      receiver: 'database-team'
+      
+    # Security alerts
+    - match:
+        service: security
+      receiver: 'security-team'
+      
+    # API performance alerts
+    - match:
+        service: deeper-bible-api
+      receiver: 'api-team'
+
+# Alert receivers configuration
+receivers:
+  # Default receiver for non-critical alerts
+  - name: 'default-receiver'
+    email_configs:
+      - to: 'devops@deeperbible.com'
+        subject: '[{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Labels: {{ .Labels }}
+          {{ end }}
+        
+    slack_configs:
+      - api_url_file: '/etc/alertmanager/secrets/slack_webhook'
+        channel: '#alerts'
+        title: '[{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Severity:* {{ .Labels.severity }}
+          *Service:* {{ .Labels.service }}
+          {{ end }}
+
+  # Critical alerts - immediate notification
+  - name: 'critical-alerts'
+    email_configs:
+      - to: 'oncall@deeperbible.com, devops@deeperbible.com'
+        subject: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+        body: |
+          CRITICAL ALERT TRIGGERED
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Time: {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          Labels: {{ .Labels }}
+          
+          Runbook: https://docs.deeperbible.com/runbooks/{{ .Labels.alertname }}
+          {{ end }}
+        
+    slack_configs:
+      - api_url_file: '/etc/alertmanager/secrets/slack_webhook'
+        channel: '#critical-alerts'
+        title: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+        text: |
+          @channel CRITICAL ALERT
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Time:* {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          *Runbook:* https://docs.deeperbible.com/runbooks/{{ .Labels.alertname }}
+          {{ end }}
+        color: 'danger'
+        
+    pagerduty_configs:
+      - routing_key_file: '/etc/alertmanager/secrets/pagerduty_key'
+        description: '{{ .GroupLabels.alertname }}: {{ .Annotations.summary }}'
+        details:
+          firing: '{{ template "pagerduty.default.instances" .Alerts.Firing }}'
+          resolved: '{{ template "pagerduty.default.instances" .Alerts.Resolved }}'
+
+  # Database team notifications
+  - name: 'database-team'
+    email_configs:
+      - to: 'database@deeperbible.com'
+        subject: '[DATABASE] {{ .GroupLabels.alertname }}'
+        body: |
+          Database Alert Triggered
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Database: {{ .Labels.database }}
+          Instance: {{ .Labels.instance }}
+          {{ end }}
+        
+    slack_configs:
+      - api_url_file: '/etc/alertmanager/secrets/slack_webhook'
+        channel: '#database-alerts'
+        title: '[DATABASE] {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Database Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Database:* {{ .Labels.database }}
+          *Instance:* {{ .Labels.instance }}
+          {{ end }}
+        color: 'warning'
+
+  # Security team notifications
+  - name: 'security-team'
+    email_configs:
+      - to: 'security@deeperbible.com'
+        subject: '[SECURITY] {{ .GroupLabels.alertname }}'
+        body: |
+          Security Alert Triggered
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Source: {{ .Labels.instance }}
+          {{ end }}
+        
+    slack_configs:
+      - api_url_file: '/etc/alertmanager/secrets/slack_webhook'
+        channel: '#security-alerts'
+        title: '[SECURITY] {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          🔒 *Security Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Source:* {{ .Labels.instance }}
+          {{ end }}
+        color: 'danger'
+
+  # API team notifications
+  - name: 'api-team'
+    email_configs:
+      - to: 'api-team@deeperbible.com'
+        subject: '[API] {{ .GroupLabels.alertname }}'
+        body: |
+          API Alert Triggered
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Service: {{ .Labels.service }}
+          {{ end }}
+        
+    slack_configs:
+      - api_url_file: '/etc/alertmanager/secrets/slack_webhook'
+        channel: '#api-alerts'
+        title: '[API] {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          ⚡ *API Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Service:* {{ .Labels.service }}
+          {{ end }}
+        color: 'warning'
+
+# Inhibit rules - prevent spam alerts
+inhibit_rules:
+  # Inhibit any warning-level alerts if the same alert is already critical
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'instance']
+    
+  # If API is down, don't alert on high response times
+  - source_match:
+      alertname: 'APIDown'
+    target_match:
+      alertname: 'HighResponseTime'
+    equal: ['instance']
+
+# Templates for custom alert formatting
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
