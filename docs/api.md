@@ -1,0 +1,1 @@
+I'll create `api.md` to provide a high-level API overview. It will cover the base URL, authentication, and list endpoints for authentication, user management, and biblical analysis. It will also detail error handling, rate limiting, and link to the OpenAPI Specification for more details.

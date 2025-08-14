@@ -1,0 +1,48 @@
+version: '3.8'
+services:
+  api:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:password@db:5432/deeper_bible
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - db
+      - redis
+      
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=deeper_bible
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  # Test services for E2E tests
+  test_db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=test_deeper_bible
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5433:5432" # Map to a different port
+    volumes:
+      - test_postgres_data:/var/lib/postgresql/data
+
+  test_redis:
+    image: redis:7
+    ports:
+      - "6380:6379" # Map to a different port
+      
+volumes:
+  postgres_data:
+  test_postgres_data: # New volume for test DB

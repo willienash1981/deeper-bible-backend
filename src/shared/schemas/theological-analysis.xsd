@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified">
+
+  <xs:element name="biblical_analysis">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="passage_overview">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="main_theme" type="xs:string"/>
+              <xs:element name="key_message" type="xs:string"/>
+              <xs:element name="difficulty_level">
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:enumeration value="beginner"/>
+                    <xs:enumeration value="intermediate"/>
+                    <xs:enumeration value="advanced"/>
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="confusing_elements" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="element" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="explanation" type="xs:string"/>
+                    <xs:element name="why_confusing" type="xs:string"/>
+                    <xs:element name="significance" type="xs:string"/>
+                  </xs:sequence>
+                  <xs:attribute name="term" type="xs:string" use="required"/>
+                  <xs:attribute name="type" use="required">
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:enumeration value="cultural"/>
+                        <xs:enumeration value="theological"/>
+                        <xs:enumeration value="linguistic"/>
+                        <xs:enumeration value="historical"/>
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="cultural_context" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="original_audience" type="xs:string"/>
+              <xs:element name="historical_situation" type="xs:string"/>
+              <xs:element name="cultural_practices" type="xs:string"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="theological_insights" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="insight" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="truth" type="xs:string"/>
+                    <xs:element name="application" type="xs:string"/>
+                  </xs:sequence>
+                  <xs:attribute name="category" type="xs:string" use="required"/>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="symbols_and_metaphors" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="symbol" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="meaning" type="xs:string"/>
+                    <xs:element name="biblical_pattern" type="xs:string"/>
+                    <xs:element name="deeper_significance" type="xs:string"/>
+                  </xs:sequence>
+                  <xs:attribute name="term" type="xs:string" use="required"/>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="connections" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="connection" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="explanation" type="xs:string"/>
+                    <xs:element name="insight" type="xs:string"/>
+                  </xs:sequence>
+                  <xs:attribute name="verse" type="xs:string" use="required"/>
+                  <xs:attribute name="relationship" use="required">
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:enumeration value="parallel"/>
+                        <xs:enumeration value="contrast"/>
+                        <xs:enumeration value="fulfillment"/>
+                        <xs:enumeration value="background"/>
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="denominational_perspectives" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="perspective" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="interpretation" type="xs:string"/>
+                    <xs:element name="emphasis" type="xs:string"/>
+                  </xs:sequence>
+                  <xs:attribute name="tradition" type="xs:string" use="required"/>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="practical_application" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="modern_relevance" type="xs:string"/>
+              <xs:element name="action_points" type="xs:string"/>
+              <xs:element name="reflection_questions" type="xs:string"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="summary" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="key_takeaway" type="xs:string"/>
+              <xs:element name="memorable_insight" type="xs:string"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="passage" type="xs:string" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

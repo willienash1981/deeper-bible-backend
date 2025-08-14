@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified">
+
+  <xs:element name="historical_cultural_analysis">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="historical_situation">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="period" type="xs:string"/>
+              <xs:element name="key_events" type="xs:string"/>
+              <xs:element name="political_landscape" type="xs:string"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="cultural_context">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="customs_and_norms" type="xs:string"/>
+              <xs:element name="daily_life" type="xs:string"/>
+              <xs:element name="religious_practices" type="xs:string"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="original_audience">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="demographics" type="xs:string"/>
+              <xs:element name="understanding_gaps" type="xs:string"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="geographical_context">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="locations" type="xs:string"/>
+              <xs:element name="significance" type="xs:string"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="passage" type="xs:string" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

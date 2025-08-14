@@ -1,0 +1,154 @@
+openapi: 3.0.0
+info:
+  title: Deeper Bible API
+  version: 1.0.0
+  description: API for the AI-powered theological discovery assistant.
+servers:
+  - url: http://localhost:3001/api
+    description: Development server
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Users
+    description: User profile management
+  - name: Analysis
+    description: Biblical verse analysis
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '201':
+          description: User registered successfully
+        '400':
+          description: Invalid input
+  /auth/login:
+    post:
+      summary: Log in a user
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: User logged in successfully
+          headers:
+            X-New-Access-Token:
+              schema:
+                type: string
+              description: New access token if refreshed
+        '401':
+          description: Invalid credentials
+  /users/profile:
+    get:
+      summary: Get user profile
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile data
+        '401':
+          description: Unauthorized
+    put:
+      summary: Update user profile
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                # Example properties, adjust as per user.model.ts
+                email:
+                  type: string
+                  format: email
+                # Add other updatable fields
+      responses:
+        '200':
+          description: User profile updated successfully
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+  /users/profile:
+    delete:
+      summary: Delete user account
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: User account deleted successfully
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+  /analysis:
+    post:
+      summary: Analyze a biblical verse or passage
+      tags:
+        - Analysis
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                verse_range:
+                  type: string
+                  example: "John 3:16"
+                translation:
+                  type: string
+                  example: "KJV"
+                  default: "KJV"
+      responses:
+        '200':
+          description: Successful analysis
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too many requests
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
