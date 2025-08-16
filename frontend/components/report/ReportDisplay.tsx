@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { ReportService } from '@/lib/api/reportService';
+import { bibleAPI } from '@/lib/api/bible-service';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { BiblicalAnalysisRenderer } from '@/components/analysis/BiblicalAnalysisRenderer';
 import { BiblicalAnalysis } from '@/lib/types/xml-types';
@@ -16,6 +17,7 @@ interface ReportDisplayProps {
 export function ReportDisplay({ bookId, chapterNumber, verses }: ReportDisplayProps) {
   const [content, setContent] = useState<string>('');
   const [analysis, setAnalysis] = useState<BiblicalAnalysis | null>(null);
+  const [verseText, setVerseText] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string>('processing');
@@ -49,18 +51,53 @@ export function ReportDisplay({ bookId, chapterNumber, verses }: ReportDisplayPr
     }
   };
 
+  // Function to fetch verse text
+  const fetchVerseText = useCallback(async () => {
+    try {
+      const chapterContent = await bibleAPI.getChapterContent(bookId, chapterNumber);
+      
+      // Parse verses range (e.g., "16-19" or "28")
+      const verseNumbers = verses.includes('-') 
+        ? (() => {
+            const [start, end] = verses.split('-').map(Number);
+            return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+          })()
+        : [parseInt(verses)];
+      
+      // Get the text for the specified verses
+      const selectedVerses = chapterContent.verses.filter(v => 
+        verseNumbers.includes(v.number)
+      );
+      
+      // Format the verse text
+      const verseTextFormatted = selectedVerses
+        .map(v => `${v.number}. ${v.text}`)
+        .join(' ');
+      
+      setVerseText(verseTextFormatted);
+    } catch (err) {
+      console.error('Failed to fetch verse text:', err);
+      // Don't fail the whole component if verse text fails
+      setVerseText('');
+    }
+  }, [bookId, chapterNumber, verses]);
+
   const generateReport = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       setStatus('processing');
 
-      const report = await ReportService.generateAndWaitForReport(
-        bookId,
-        chapterNumber,
-        verses,
-        (newStatus) => setStatus(newStatus)
-      );
+      // Fetch both the report and verse text in parallel
+      const [report] = await Promise.all([
+        ReportService.generateAndWaitForReport(
+          bookId,
+          chapterNumber,
+          verses,
+          (newStatus) => setStatus(newStatus)
+        ),
+        fetchVerseText()
+      ]);
 
       const reportContent = report.content || '';
       setContent(reportContent);
@@ -73,7 +110,7 @@ export function ReportDisplay({ bookId, chapterNumber, verses }: ReportDisplayPr
     } finally {
       setLoading(false);
     }
-  }, [bookId, chapterNumber, verses]);
+  }, [bookId, chapterNumber, verses, fetchVerseText]);
 
   useEffect(() => {
     generateReport();
@@ -159,7 +196,8 @@ export function ReportDisplay({ bookId, chapterNumber, verses }: ReportDisplayPr
         // Render beautiful structured analysis
         <BiblicalAnalysisRenderer 
           analysis={analysis} 
-          verseReference={verseReference} 
+          verseReference={verseReference}
+          verseText={verseText}
         />
       ) : (
         // Fallback to markdown content

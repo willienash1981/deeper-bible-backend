@@ -178,14 +178,46 @@ router.get('/check', async (req: Request, res: Response) => {
         let analysis = analysisResult.parsed_analysis;
         if (!analysis && analysisResult.xml_content) {
           try {
-            // Try parsing as JSON first (new format)
+            // First try parsing as JSON (new format)
             analysis = JSON.parse(analysisResult.xml_content);
             console.log('✅ Successfully parsed cached JSON content:', Object.keys(analysis));
           } catch (jsonError) {
-            console.log('ℹ️ Cached content is not JSON, treating as legacy XML');
-            // For legacy XML content, we'll need to use the XML parser or create a compatible structure
-            // For now, set analysis to null so it falls back to content display
-            analysis = null;
+            console.log('ℹ️ Cached content is not JSON, attempting XML extraction');
+            
+            // Try to extract XML from markdown-wrapped content
+            let xmlContent = analysisResult.xml_content;
+            
+            // Remove markdown code block wrapper if present
+            const xmlMatch = xmlContent.match(/```xml\s*\n([\s\S]*?)\n```/);
+            if (xmlMatch) {
+              xmlContent = xmlMatch[1];
+              console.log('📜 Extracted XML from markdown wrapper');
+            }
+            
+            // For now, let's create a minimal compatible structure from XML
+            // This is a temporary solution until we have proper XML parsing
+            if (xmlContent.includes('<summary>')) {
+              try {
+                // Extract basic info for compatibility
+                const summaryMatch = xmlContent.match(/<what_is_this_passage_primarily_about>(.*?)<\/what_is_this_passage_primarily_about>/s);
+                const coreMessageMatch = xmlContent.match(/<core_message_in_simple_terms>(.*?)<\/core_message_in_simple_terms>/s);
+                const difficultyMatch = xmlContent.match(/<difficulty_level>(.*?)<\/difficulty_level>/s);
+                
+                analysis = {
+                  summary: {
+                    what_is_this_passage_primarily_about: summaryMatch ? summaryMatch[1].trim() : '',
+                    core_message_in_simple_terms: coreMessageMatch ? coreMessageMatch[1].trim() : '',
+                    difficulty_level: difficultyMatch ? difficultyMatch[1].trim() : 'intermediate'
+                  }
+                } as any;
+                console.log('✅ Successfully extracted basic XML structure');
+              } catch (extractError) {
+                console.log('❌ Failed to extract XML structure:', extractError);
+                analysis = null as any;
+              }
+            } else {
+              analysis = null as any;
+            }
           }
         }
         
