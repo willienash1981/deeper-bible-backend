@@ -67,9 +67,9 @@ const generateAIAnalysis = async (bookId: string, chapter: number, verses: strin
 ## ${verseRange}
 
 ### Overview
-**Main Theme**: ${analysis.passage_overview?.main_theme || analysis.summary?.what_is_this_passage_primarily_about || 'Biblical passage analysis'}
-**Key Message**: ${analysis.passage_overview?.key_message || analysis.summary?.core_message_in_simple_terms || 'Understanding God\'s Word'}
-**Difficulty Level**: ${analysis.passage_overview?.difficulty_level || analysis.summary?.difficulty_level || 'intermediate'}
+**Main Theme**: ${(analysis as any).passage_overview?.main_theme || (analysis as any).summary?.what_is_this_passage_primarily_about || 'Biblical passage analysis'}
+**Key Message**: ${(analysis as any).passage_overview?.key_message || (analysis as any).summary?.core_message_in_simple_terms || 'Understanding God\'s Word'}
+**Difficulty Level**: ${(analysis as any).passage_overview?.difficulty_level || (analysis as any).summary?.difficulty_level || 'intermediate'}
 
 ### Cultural Context
 **Original Audience**: ${analysis.cultural_context?.original_audience || 'Ancient biblical audience'}
@@ -173,6 +173,22 @@ router.get('/check', async (req: Request, res: Response) => {
       // If we got a cached result, convert it to report format
       if (analysisResult.cached && analysisResult.xml_content) {
         const reportId = uuidv4();
+        
+        // Parse the analysis if it's not already parsed
+        let analysis = analysisResult.parsed_analysis;
+        if (!analysis && analysisResult.xml_content) {
+          try {
+            // Try parsing as JSON first (new format)
+            analysis = JSON.parse(analysisResult.xml_content);
+            console.log('✅ Successfully parsed cached JSON content:', Object.keys(analysis));
+          } catch (jsonError) {
+            console.log('ℹ️ Cached content is not JSON, treating as legacy XML');
+            // For legacy XML content, we'll need to use the XML parser or create a compatible structure
+            // For now, set analysis to null so it falls back to content display
+            analysis = null;
+          }
+        }
+        
         const convertedReport = {
           id: reportId,
           bookId: bookId as string,
@@ -180,7 +196,7 @@ router.get('/check', async (req: Request, res: Response) => {
           verses: verses as string,
           status: 'completed' as const,
           content: await convertAnalysisToMarkdown(analysisResult),
-          analysis: analysisResult.parsed_analysis,
+          analysis: analysis,
           createdAt: analysisResult.generated_at?.toISOString() || new Date().toISOString(),
           completedAt: analysisResult.last_accessed?.toISOString() || new Date().toISOString()
         };
@@ -221,9 +237,9 @@ async function convertAnalysisToMarkdown(analysisResult: any): Promise<string> {
 ## ${verseRange}
 
 ### Overview
-**Main Theme**: ${analysis.passage_overview?.main_theme || analysis.summary?.what_is_this_passage_primarily_about || 'Biblical passage analysis'}
-**Key Message**: ${analysis.passage_overview?.key_message || analysis.summary?.core_message_in_simple_terms || 'Understanding God\'s Word'}
-**Difficulty Level**: ${analysis.passage_overview?.difficulty_level || analysis.summary?.difficulty_level || 'intermediate'}
+**Main Theme**: ${(analysis as any).passage_overview?.main_theme || (analysis as any).summary?.what_is_this_passage_primarily_about || 'Biblical passage analysis'}
+**Key Message**: ${(analysis as any).passage_overview?.key_message || (analysis as any).summary?.core_message_in_simple_terms || 'Understanding God\'s Word'}
+**Difficulty Level**: ${(analysis as any).passage_overview?.difficulty_level || (analysis as any).summary?.difficulty_level || 'intermediate'}
 
 ### Cultural Context
 **Original Audience**: ${analysis.cultural_context?.original_audience || 'Ancient biblical audience'}
