@@ -49,21 +49,35 @@ export class TestHelpers {
   // Database helpers
   static async cleanDatabase(prisma: PrismaClient) {
     const tables = [
-      'analysis_feedback',
-      'analysis',
-      'user_sessions',
-      'user_preferences',
-      'users',
-      'symbols',
-      'cross_references'
+      'Favorite',
+      'History', 
+      'Report',
+      'User',
+      'Verse',
+      'Book',
+      'SymbolPattern',
+      'CrossReference',
+      'CacheEntry'
     ];
     
     for (const table of tables) {
-      await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${table} CASCADE`);
+      try {
+        await prisma.$executeRawUnsafe(`TRUNCATE TABLE "${table}" CASCADE`);
+      } catch (error) {
+        // Table might not exist in test DB, continue
+        console.warn(`Could not truncate table ${table}:`, error);
+      }
     }
   }
 
   static async seedDatabase(prisma: PrismaClient, data: any) {
+    // Seed books first (required for other relations)
+    if (data.books) {
+      for (const book of data.books) {
+        await prisma.book.create({ data: book });
+      }
+    }
+
     // Seed users
     if (data.users) {
       for (const user of data.users) {
@@ -71,17 +85,17 @@ export class TestHelpers {
       }
     }
 
-    // Seed symbols
-    if (data.symbols) {
-      for (const symbol of data.symbols) {
-        await prisma.symbol.create({ data: symbol });
+    // Seed symbol patterns
+    if (data.symbolPatterns) {
+      for (const symbol of data.symbolPatterns) {
+        await prisma.symbolPattern.create({ data: symbol });
       }
     }
 
-    // Seed analyses
-    if (data.analyses) {
-      for (const analysis of data.analyses) {
-        await prisma.analysis.create({ data: analysis });
+    // Seed reports (analyses)
+    if (data.reports) {
+      for (const report of data.reports) {
+        await prisma.report.create({ data: report });
       }
     }
   }

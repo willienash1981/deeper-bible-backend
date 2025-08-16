@@ -101,10 +101,13 @@ describe('User Journey', () => {
 ### Performance Tests
 - **Purpose**: Validate performance under load
 - **Location**: `tests/performance/`
-- **Tools**: autocannon for load testing
+- **Tools**: autocannon for load testing via LoadTester utility
+- **Automated Benchmarks**: Response time, throughput, error rates
+- **Report Generation**: Markdown reports with detailed metrics
+- **CI Integration**: Automated performance regression detection
 - **Scenarios**:
   - Light Load: 10 concurrent connections
-  - Normal Load: 50 concurrent connections
+  - Normal Load: 50 concurrent connections  
   - Heavy Load: 100 concurrent connections
   - Stress Test: 200 concurrent connections
   - Spike Test: 500 concurrent connections
@@ -134,6 +137,29 @@ TestHelpers.createMockRequest();
 TestHelpers.createMockResponse();
 TestHelpers.generateAuthToken(payload);
 TestHelpers.cleanDatabase(prisma);
+```
+
+### LoadTester
+Performance testing utilities:
+```typescript
+const loadTester = new LoadTester('http://localhost:3000');
+const result = await loadTester.runLoadTest({
+  url: '/api/endpoint',
+  duration: 30,
+  connections: 10
+});
+const validation = loadTester.validateBenchmarks(result);
+const report = loadTester.generateReport([result], [validation]);
+```
+
+### Custom Matchers
+Extended Jest matchers:
+```typescript
+expect('user@test.com').toBeValidEmail();
+expect('uuid-string').toBeValidUUID();
+expect('John 3:16').toBeValidBibleReference();
+expect(response).toBeSuccessfulResponse();
+expect(response.data).toMatchApiSchema('UserResponse');
 ```
 
 ## 📊 Coverage Reports
@@ -197,13 +223,23 @@ docker-compose -f docker-compose.test.yml up --abort-on-container-exit
 
 ## 📈 Performance Benchmarks
 
-### Expected Performance
+### Performance Benchmarks
+| Metric | Target | Maximum |
+|--------|--------|---------|
+| P95 Response Time | < 500ms | 500ms |
+| P99 Response Time | < 1000ms | 1000ms |
+| Average Response Time | < 200ms | 200ms |
+| Minimum Throughput | > 50 req/s | - |
+| Error Rate | < 1% | 1% |
+
+### Expected Performance by Endpoint
 | Endpoint | Avg Latency | P95 Latency | Throughput |
 |----------|-------------|-------------|------------|
-| GET /api/analysis/history | < 100ms | < 200ms | > 100 req/s |
-| POST /api/analysis/verse | < 2000ms | < 5000ms | > 20 req/s |
-| POST /api/auth/login | < 300ms | < 500ms | > 50 req/s |
-| GET /api/symbols/search | < 150ms | < 300ms | > 80 req/s |
+| GET /health | < 50ms | < 100ms | > 200 req/s |
+| GET /api/books | < 200ms | < 400ms | > 100 req/s |
+| POST /auth/login | < 300ms | < 500ms | > 50 req/s |
+| GET /api/users/profile | < 150ms | < 300ms | > 80 req/s |
+| POST /api/books | < 500ms | < 1000ms | > 30 req/s |
 
 ## 🔍 Debugging Tests
 
@@ -242,10 +278,15 @@ Tests run automatically on:
 1. **Lint & Type Check**
 2. **Unit Tests** (Matrix: Node 18, 20)
 3. **Integration Tests**
-4. **E2E Tests**
-5. **Performance Tests** (PR only)
-6. **Security Scan**
-7. **Coverage Report**
+4. **Performance Tests** (main branch only)
+5. **Security Scan**
+6. **Test Report Generation**
+
+### Performance CI Integration
+- Automated performance tests on main branch pushes
+- Performance reports uploaded as artifacts
+- Benchmark validation with pass/fail criteria
+- Performance regression detection
 
 ## 📝 Writing New Tests
 

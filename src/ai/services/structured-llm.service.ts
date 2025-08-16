@@ -1,10 +1,11 @@
-import openai from './openai-client';
+import { openai } from './openai-client';
 import { LLM_SETTINGS } from '../config/llm-settings';
 import { XMLResponseParser } from '../utils/xml-response-parser';
 import { BiblicalAnalysis } from '../../shared/types/xml-types';
 import { CostTracker } from '../utils/cost-tracker';
 import { LLMAnalysisResponse } from '../types/ai-response.types';
 import { RetryHandler } from '../utils/retry-handler';
+import { ContentModerationService } from '../utils/content-moderation';
 import { createLogger } from '../../utils/logger';
 import { validateInput } from '../../utils/validation';
 import { Logger } from 'winston';
@@ -13,12 +14,14 @@ export class StructuredLLMService {
   private xmlResponseParser: XMLResponseParser;
   private costTracker: CostTracker;
   private retryHandler: RetryHandler;
+  private moderationService: ContentModerationService;
   private logger: Logger;
 
   constructor() {
     this.xmlResponseParser = new XMLResponseParser();
     this.costTracker = new CostTracker();
     this.retryHandler = new RetryHandler();
+    this.moderationService = new ContentModerationService();
     this.logger = createLogger('StructuredLLMService');
   }
 
@@ -36,6 +39,23 @@ export class StructuredLLMService {
     }
 
     const sanitizedPrompt = validateInput.sanitizeText(prompt);
+    
+    // Check content moderation
+    const moderationResult = await this.moderationService.moderateContent(sanitizedPrompt);
+    if (moderationResult.flagged) {
+      this.logger.warn('Content flagged by moderation', {
+        categories: moderationResult.categories,
+        explanation: moderationResult.explanation,
+        promptVersion
+      });
+      throw new Error(`Content moderation failed: ${moderationResult.explanation}`);
+    }
+
+    // Additional biblical appropriateness check
+    const isBiblicallyAppropriate = await this.moderationService.checkBiblicalAppropriateness(sanitizedPrompt);
+    if (!isBiblicallyAppropriate) {
+      throw new Error('Content is not appropriate for biblical analysis');
+    }
     
     try {
       // Mock response for testing
@@ -81,12 +101,12 @@ export class StructuredLLMService {
       // Execute with retry logic and circuit breaker
       const response = await this.retryHandler.executeWithRetry(
         async () => {
-          return await openai.chat.completions.create({
+          return await openai.createChatCompletion({
             model: LLM_SETTINGS.OPENAI_MODEL,
             messages: [
               {
                 role: 'system',
-                content: 'You are a biblical scholar and theological expert. Always respond in valid XML format as specified by the user prompt. Ensure the XML is well-formed and adheres to the provided schema.'
+                content: 'You are a biblical scholar and theological expert. Respond with structured biblical analysis in JSON format.'
               },
               {
                 role: 'user',
@@ -95,7 +115,7 @@ export class StructuredLLMService {
             ],
             temperature: LLM_SETTINGS.OPENAI_TEMPERATURE,
             max_tokens: LLM_SETTINGS.OPENAI_MAX_TOKENS,
-            response_format: { type: "text" }
+            response_format: { type: "json_object" }
           });
         },
         {
@@ -114,16 +134,16 @@ export class StructuredLLMService {
         throw new Error('LLM returned empty response');
       }
 
-      // Parse and validate the XML content with retry
+      // Parse and validate the JSON content with retry
       const parsedAnalysis = await this.retryHandler.executeWithRetry(
         async () => {
-          return await this.xmlResponseParser.parseLLMResponse(xmlContent);
+          return JSON.parse(xmlContent);
         },
         {
           maxRetries: 2,
           initialDelay: 500
         },
-        'xml-parsing'
+        'json-parsing'
       );
 
       // Calculate and log cost
@@ -143,7 +163,7 @@ export class StructuredLLMService {
       );
 
       const result: LLMAnalysisResponse = {
-        rawXml: xmlContent,
+        rawXml: xmlContent, // Keep this for compatibility - it's actually JSON now
         parsedAnalysis,
         tokensUsed: totalTokens,
         cost,

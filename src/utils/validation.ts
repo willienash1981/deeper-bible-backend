@@ -1,7 +1,16 @@
 import { IsString, IsNotEmpty, IsEnum, IsOptional, validate, IsUUID, IsNumber, Min, Max } from 'class-validator';
 import { Transform } from 'class-transformer';
 import DOMPurify from 'isomorphic-dompurify';
-import { InsightType } from '../services/ai/types';
+// Temporarily removed import until types file is available
+// import { InsightType } from '../services/ai/types';
+
+// Define InsightType enum locally for validation
+enum InsightType {
+  THEOLOGICAL = 'theological',
+  HISTORICAL = 'historical',
+  PRACTICAL = 'practical',
+  PROPHETIC = 'prophetic'
+}
 
 export class InsightParamsDto {
   @IsString()

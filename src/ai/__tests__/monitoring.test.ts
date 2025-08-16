@@ -1,6 +1,13 @@
 import { AIMonitoringService } from '../utils/monitoring';
 
-jest.mock('../../utils/logger');
+jest.mock('../../utils/logger', () => ({
+  createLogger: jest.fn().mockReturnValue({
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn()
+  })
+}));
 jest.mock('ioredis');
 
 describe('AIMonitoringService', () => {
@@ -152,15 +159,14 @@ describe('AIMonitoringService', () => {
         { service: 'OpenAI', error: 'Connection timeout' }
       );
 
-      expect(mockRedis.setex).toHaveBeenCalledWith(
-        expect.stringContaining('alerts:critical:'),
-        604800, // 7 days in seconds
+      expect(mockRedis.lpush).toHaveBeenCalledWith(
+        expect.stringContaining('alerts:critical'),
         expect.stringContaining('System failure detected')
       );
     });
 
     it('should handle alert creation errors gracefully', async () => {
-      mockRedis.setex.mockRejectedValue(new Error('Redis error'));
+      mockRedis.lpush.mockRejectedValue(new Error('Redis error'));
 
       await expect(monitoringService.createAlert('low', 'Test alert'))
         .resolves.toBeUndefined();

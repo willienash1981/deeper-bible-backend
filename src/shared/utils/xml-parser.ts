@@ -17,7 +17,14 @@ export class XMLParser {
         normalize: true,      // Normalize whitespace in text nodes
       });
       // xml2js often wraps the root element, so we need to unwrap it
-      return result.biblical_analysis as BiblicalAnalysis;
+      // Handle multiple possible root element names that OpenAI might use
+      // Note: normalizeTags converts all tags to lowercase
+      const analysis = result.analysis || result.biblical_analysis || result.passageanalysis || result.scriptureanalysis;
+      if (!analysis) {
+        console.error('Available root elements:', Object.keys(result));
+        throw new Error('Expected root element not found in XML. Available: ' + Object.keys(result).join(', '));
+      }
+      return analysis as BiblicalAnalysis;
     } catch (error) {
       console.error('Error parsing XML:', error);
       throw new Error('Failed to parse XML content.');

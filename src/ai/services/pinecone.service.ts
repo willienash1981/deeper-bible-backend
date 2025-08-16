@@ -41,8 +41,7 @@ export class PineconeService {
 
     try {
       this.pinecone = new Pinecone({
-        apiKey,
-        environment
+        apiKey
       });
       
       this.logger.info('PineconeService initialized successfully', {
@@ -215,7 +214,7 @@ export class PineconeService {
 
       this.logger.debug('Index stats retrieved', {
         indexName: this.indexName,
-        totalVectorCount: stats.totalVectorCount
+        totalRecordCount: stats.totalRecordCount
       });
 
       return stats;

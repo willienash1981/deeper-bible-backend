@@ -1,7 +1,14 @@
 import { PineconeService } from '../services/pinecone.service';
 
 jest.mock('@pinecone-database/pinecone');
-jest.mock('../../utils/logger');
+jest.mock('../../utils/logger', () => ({
+  createLogger: jest.fn().mockReturnValue({
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn()
+  })
+}));
 jest.mock('../utils/retry-handler');
 
 describe('PineconeService', () => {
@@ -17,7 +24,7 @@ describe('PineconeService', () => {
       upsert: jest.fn().mockResolvedValue({}),
       query: jest.fn().mockResolvedValue({ matches: [] }),
       deleteMany: jest.fn().mockResolvedValue({}),
-      describeIndexStats: jest.fn().mockResolvedValue({ totalVectorCount: 1000 })
+      describeIndexStats: jest.fn().mockResolvedValue({ totalRecordCount: 1000 })
     };
 
     // Mock Pinecone client
@@ -192,7 +199,7 @@ describe('PineconeService', () => {
   describe('getIndexStats', () => {
     it('should retrieve index statistics', async () => {
       const mockStats = {
-        totalVectorCount: 1000,
+        totalRecordCount: 1000,
         dimension: 1536,
         indexFullness: 0.1
       };

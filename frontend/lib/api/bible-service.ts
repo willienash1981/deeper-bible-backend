@@ -5,10 +5,17 @@ export interface BibleBook {
   id: string;
   name: string;
   testament: 'old' | 'new';
+  chapters: number;
 }
 
 export interface BooksResponse {
   books: BibleBook[];
+}
+
+export interface APIResponse<T> {
+  success: boolean;
+  data: T;
+  total?: number;
 }
 
 export interface ChapterResponse {
@@ -31,6 +38,7 @@ export interface ReportResponse {
   id: string;
   status: 'processing' | 'completed' | 'failed';
   content?: string;
+  analysis?: any; // BiblicalAnalysis data from the backend
   error?: string;
 }
 
@@ -72,8 +80,8 @@ export const bibleAPI = {
   // Get all books
   getBooks: async (): Promise<BooksResponse> => {
     try {
-      const response = await apiClient.get<BooksResponse>('/books');
-      return response.data;
+      const response = await apiClient.get<APIResponse<BibleBook[]>>('/books');
+      return { books: response.data.data };
     } catch (error) {
       return handleAPIError(error);
     }
@@ -82,8 +90,11 @@ export const bibleAPI = {
   // Get chapters for a book
   getChapters: async (bookId: string): Promise<ChapterResponse> => {
     try {
-      const response = await apiClient.get<ChapterResponse>(`/books/${bookId}/chapters`);
-      return response.data;
+      const response = await apiClient.get<APIResponse<{bookId: string, bookName: string, chapters: Array<{number: number, verses: number}>, totalChapters: number}>>(`/books/${bookId}/chapters`);
+      return {
+        chapters: response.data.data.totalChapters,
+        bookName: response.data.data.bookName
+      };
     } catch (error) {
       return handleAPIError(error);
     }
@@ -92,9 +103,30 @@ export const bibleAPI = {
   // Get verses for a chapter
   getChapterContent: async (bookId: string, chapterNumber: number): Promise<ChapterContentResponse> => {
     try {
-      const response = await apiClient.get<ChapterContentResponse>(
-        `/books/${bookId}/chapters/${chapterNumber}`
+      const response = await apiClient.get<APIResponse<any>>(
+        `/books/${bookId}/chapters/${chapterNumber}/verses`
       );
+      // Map verse structure from API to frontend format
+      const verses = response.data.data.verses.map((v: any) => ({
+        number: v.verse,
+        text: v.text
+      }));
+      return {
+        book: response.data.data.bookName,
+        chapter: chapterNumber,
+        verses
+      };
+    } catch (error) {
+      return handleAPIError(error);
+    }
+  },
+
+  // Check if report already exists
+  checkExistingReport: async (bookId: string, chapter: number, verses: string): Promise<{exists: boolean, report: ReportResponse | null}> => {
+    try {
+      const response = await apiClient.get<{exists: boolean, report: ReportResponse | null}>('/reports/check', {
+        params: { bookId, chapter, verses }
+      });
       return response.data;
     } catch (error) {
       return handleAPIError(error);

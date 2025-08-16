@@ -16,11 +16,32 @@ export class XMLResponseParser {
    */
   async parseLLMResponse(xmlString: string): Promise<BiblicalAnalysis> {
     try {
-      const parsedAnalysis = await this.xmlParser.parseAnalysisXml(xmlString);
+      // Debug: Log first 200 characters to see what OpenAI actually returned
+      console.log('🔍 OpenAI Response Preview:', xmlString.substring(0, 200).replace(/\n/g, '\\n'));
+      
+      // Strip markdown code fences if present (OpenAI often wraps XML in ```xml ... ```)
+      let cleanedXml = xmlString.trim();
+      
+      // Remove opening markdown fence
+      if (cleanedXml.startsWith('```xml')) {
+        cleanedXml = cleanedXml.replace(/^```xml\s*/, '');
+      } else if (cleanedXml.startsWith('```')) {
+        cleanedXml = cleanedXml.replace(/^```\s*/, '');
+      }
+      
+      // Remove closing markdown fence
+      if (cleanedXml.endsWith('```')) {
+        cleanedXml = cleanedXml.replace(/\s*```$/, '');
+      }
+      
+      console.log('🧹 Cleaned XML Preview:', cleanedXml.substring(0, 200).replace(/\n/g, '\\n'));
+      
+      const parsedAnalysis = await this.xmlParser.parseAnalysisXml(cleanedXml);
       // Additional validation or transformation can happen here if needed
       return parsedAnalysis;
     } catch (error) {
       console.error('Error parsing LLM XML response:', error);
+      console.error('🚨 Full OpenAI Response:', xmlString.substring(0, 500));
       throw new Error('Failed to parse LLM XML response into expected structure.');
     }
   }

@@ -1,16 +1,18 @@
 import { Pool } from 'pg';
-import { AnalysisCache } from '@api/cache/analysis-cache'; // Updated import
-import { StructuredLLMService } from '@ai/services/structured-llm.service'; // Updated import
-import { PromptManagerService } from '@ai/services/prompt-manager.service'; // Updated import
-import { PromptType } from '@ai/utils/prompt-versioning'; // Updated import
-import { AnalyzeRequest, AnalysisResult } from '@shared/types/analysis.types'; // Updated import
-import { BiblicalAnalysis } from '@shared/types/xml-types'; // Updated import
+import { AnalysisCache } from '../cache/analysis-cache'; // Updated import
+import { StructuredLLMService } from '../../ai/services/structured-llm.service'; // Updated import
+import { PromptManagerService } from '../../ai/services/prompt-manager.service'; // Updated import
+import { PromptType } from '../../ai/utils/prompt-versioning'; // Updated import
+import { AnalyzeRequest, AnalysisResult } from '../../shared/types/analysis.types'; // Updated import
+import { BiblicalAnalysis } from '../../shared/types/xml-types'; // Updated import
+import { BollsBibleService } from './bolls-bible.service';
 
 export class VerseAnalysisService {
   private pool: Pool;
   private analysisCache: AnalysisCache;
   private structuredLLMService: StructuredLLMService;
   private promptManagerService: PromptManagerService;
+  private bollsBibleService: BollsBibleService;
 
   constructor() {
     this.pool = new Pool({
@@ -19,6 +21,7 @@ export class VerseAnalysisService {
     this.analysisCache = new AnalysisCache();
     this.structuredLLMService = new StructuredLLMService();
     this.promptManagerService = new PromptManagerService();
+    this.bollsBibleService = new BollsBibleService();
   }
 
   /**
@@ -112,14 +115,102 @@ export class VerseAnalysisService {
   }
 
   /**
-   * Placeholder for fetching actual verse text from a Bible text service.
-   * @param verseRange The verse range to fetch.
+   * Fetches actual verse text from database or external API.
+   * @param verseRange The verse range to fetch (e.g., "john 3:16", "psalms 23:1-3", "revelation 2:17").
    * @param translation The desired translation.
-   * @returns The text of the verse.
+   * @returns The text of the verse(s).
    */
   private async getVerseText(verseRange: string, translation: string): Promise<string> {
-    // In a real application, this would query the bible_verses table or an external API.
-    console.warn(`Placeholder: Fetching verse text for ${verseRange} (${translation})`);
-    return `This is the placeholder text for ${verseRange} in ${translation}.`;
+    try {
+      // Parse verse range (e.g., "john 3:16", "psalms 23:1-3")
+      const parsed = this.parseVerseRange(verseRange);
+      if (!parsed) {
+        throw new Error(`Could not parse verse range: ${verseRange}`);
+      }
+
+      const { book, chapter, startVerse, endVerse } = parsed;
+
+      // First try to get from database
+      const dbVerses = await this.getVersesFromDB(book, chapter, startVerse, endVerse, translation);
+      if (dbVerses.length > 0) {
+        return dbVerses.map(v => `${v.verse}. ${v.text}`).join(' ');
+      }
+
+      // Fallback to Bolls Bible API (NIV only)
+      if (translation === 'NIV' || translation === 'KJV') { // Treat KJV requests as NIV for now
+        const bookInfo = this.bollsBibleService.getBookInfo(book.toLowerCase());
+        if (bookInfo) {
+          if (startVerse === endVerse) {
+            // Single verse
+            const verse = await this.bollsBibleService.getVerse(bookInfo.number, chapter, startVerse);
+            return verse ? `${verse.verse}. ${verse.text}` : `Verse ${verseRange} not found.`;
+          } else {
+            // Multiple verses
+            const chapterVerses = await this.bollsBibleService.getChapterVerses(bookInfo.number, chapter);
+            const requestedVerses = chapterVerses.filter(v => v.verse >= startVerse && v.verse <= endVerse);
+            return requestedVerses.map(v => `${v.verse}. ${v.text}`).join(' ');
+          }
+        }
+      }
+
+      // Last resort fallback
+      return `Text for ${verseRange} (${translation}) is not currently available. Please try a different translation or contact support.`;
+    } catch (error) {
+      console.error(`Error fetching verse text for ${verseRange}:`, error);
+      return `Error retrieving ${verseRange}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    }
+  }
+
+  /**
+   * Parses a verse range string into its components.
+   * @param verseRange The verse range string (e.g., "john 3:16", "psalms 23:1-3")
+   * @returns Parsed components or null if invalid
+   */
+  private parseVerseRange(verseRange: string): { book: string; chapter: number; startVerse: number; endVerse: number } | null {
+    try {
+      // Normalize the input: remove extra spaces, convert to lowercase
+      const normalized = verseRange.trim().toLowerCase();
+      
+      // Match patterns like "john 3:16" or "psalms 23:1-3" or "1 john 2:15-17"
+      const match = normalized.match(/^((?:\d\s+)?[a-z]+)\s+(\d+):(\d+)(?:-(\d+))?$/);
+      
+      if (!match) {
+        return null;
+      }
+
+      const book = match[1].replace(/\s+/g, ''); // Remove spaces from book names
+      const chapter = parseInt(match[2], 10);
+      const startVerse = parseInt(match[3], 10);
+      const endVerse = match[4] ? parseInt(match[4], 10) : startVerse;
+
+      return { book, chapter, startVerse, endVerse };
+    } catch (error) {
+      console.error(`Error parsing verse range ${verseRange}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Fetches verses from the database.
+   * @param book The book name
+   * @param chapter The chapter number
+   * @param startVerse The starting verse number
+   * @param endVerse The ending verse number
+   * @param translation The translation
+   * @returns Array of verse records
+   */
+  private async getVersesFromDB(book: string, chapter: number, startVerse: number, endVerse: number, translation: string): Promise<Array<{verse: number, text: string}>> {
+    try {
+      const result = await this.pool.query(
+        `SELECT verse, text FROM bible_verses 
+         WHERE LOWER(book) = LOWER($1) AND chapter = $2 AND verse >= $3 AND verse <= $4 AND UPPER(translation) = UPPER($5)
+         ORDER BY verse`,
+        [book, chapter, startVerse, endVerse, translation]
+      );
+      return result.rows;
+    } catch (error) {
+      console.error(`Error querying database for ${book} ${chapter}:${startVerse}-${endVerse}:`, error);
+      return [];
+    }
   }
 }

@@ -3,9 +3,9 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan'; // For logging HTTP requests
-import routes from '@api/routes'; // Updated import
-import * as redisConfig from '@api/config/redis'; // Updated import
-import { CORS_CONFIG } from '@api/config/security'; // Updated import
+import routes from './routes'; // Updated import
+import * as redisConfig from './config/redis'; // Updated import
+import { corsOptions } from './middleware/cors'; // Updated import
 
 const app = express();
 
@@ -18,7 +18,7 @@ redisConfig.connectRedis().catch((err: any) => {
 // Middleware
 app.use(express.json()); // Parse JSON request bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded request bodies
-app.use(cors(CORS_CONFIG)); // Enable CORS with specific configuration
+app.use(cors(corsOptions)); // Enable CORS with robust configuration
 app.use(helmet()); // Add security headers
 app.use(compression()); // Compress response bodies
 app.use(morgan('dev')); // HTTP request logging

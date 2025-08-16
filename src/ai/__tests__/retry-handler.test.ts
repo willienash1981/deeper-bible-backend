@@ -1,6 +1,13 @@
 import { RetryHandler } from '../utils/retry-handler';
 
-jest.mock('../../utils/logger');
+jest.mock('../../utils/logger', () => ({
+  createLogger: jest.fn().mockReturnValue({
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn()
+  })
+}));
 
 describe('RetryHandler', () => {
   let retryHandler: RetryHandler;
@@ -21,24 +28,24 @@ describe('RetryHandler', () => {
     });
 
     it('should retry on retryable errors', async () => {
-      const mockFn = jest.fn()
-        .mockRejectedValueOnce(new Error('Rate limit exceeded'))
-        .mockRejectedValueOnce(new Error('Server error'))
-        .mockResolvedValue('success');
+      const mockFn = jest.fn();
 
-      // Mock rate limit error
+      // Mock rate limit error on first call
       mockFn.mockImplementationOnce(() => {
         const error = new Error('Rate limit exceeded');
         (error as any).status = 429;
         throw error;
       });
 
-      // Mock server error  
+      // Mock server error on second call
       mockFn.mockImplementationOnce(() => {
         const error = new Error('Server error');
         (error as any).status = 500;
         throw error;
       });
+
+      // Success on third call
+      mockFn.mockImplementationOnce(() => Promise.resolve('success'));
 
       const result = await retryHandler.executeWithRetry(mockFn, {
         maxRetries: 3,

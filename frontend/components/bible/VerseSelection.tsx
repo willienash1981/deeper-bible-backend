@@ -28,7 +28,10 @@ export function VerseSelection({ verses, fontSize, onSelectionChange }: VerseSel
       } else {
         newSelected.add(verseNumber);
       }
-      onSelectionChange(Array.from(newSelected).sort((a, b) => a - b));
+      // Use setTimeout to defer the state update to prevent updating parent during render
+      setTimeout(() => {
+        onSelectionChange(Array.from(newSelected).sort((a, b) => a - b));
+      }, 0);
       return newSelected;
     });
   }, [onSelectionChange]);
@@ -56,7 +59,7 @@ export function VerseSelection({ verses, fontSize, onSelectionChange }: VerseSel
     >
       {verses.map((verse) => (
         <div
-          key={verse.number}
+          key={`verse-${verse.number}`}
           className={cn(
             'cursor-pointer transition-all duration-200 p-2 rounded-lg',
             selectedVerses.has(verse.number)
@@ -78,13 +81,6 @@ export function VerseSelection({ verses, fontSize, onSelectionChange }: VerseSel
         </div>
       ))}
       
-      {selectedVerses.size > 0 && (
-        <div className="sticky bottom-4 flex justify-center">
-          <div className="bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg">
-            {selectedVerses.size} verse{selectedVerses.size !== 1 ? 's' : ''} selected
-          </div>
-        </div>
-      )}
     </div>
   );
 }

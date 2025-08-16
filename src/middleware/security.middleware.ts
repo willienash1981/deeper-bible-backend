@@ -115,7 +115,7 @@ export class SecurityMiddleware {
     const originalEnd = res.end;
     const startTime = Date.now();
 
-    res.end = function(this: Response, ...args: any[]) {
+    res.end = function(this: Response, chunk?: any, encoding?: BufferEncoding, cb?: (() => void)) {
       const duration = Date.now() - startTime;
       const userId = req.userId;
       
@@ -129,7 +129,7 @@ export class SecurityMiddleware {
       }
 
       // Call original end method
-      originalEnd.apply(this, args);
+      return originalEnd.call(this, chunk, encoding, cb);
     };
 
     next();

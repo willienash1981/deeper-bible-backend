@@ -1,7 +1,14 @@
 import { ContentModerationService } from '../utils/content-moderation';
 
 jest.mock('../services/openai-client');
-jest.mock('../../utils/logger');
+jest.mock('../../utils/logger', () => ({
+  createLogger: jest.fn().mockReturnValue({
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn()
+  })
+}));
 
 describe('ContentModerationService', () => {
   let moderationService: ContentModerationService;

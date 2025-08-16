@@ -1,0 +1,43 @@
+{
+  "timestamp": "2025-08-15T22:48:19.429Z",
+  "frontend": {
+    "url": "http://localhost:3003"
+  },
+  "backend": {
+    "url": "http://localhost:3001"
+  },
+  "tests": [
+    {
+      "name": "Frontend Access",
+      "passed": true,
+      "message": "Homepage loaded successfully: Discover the Deeper Meaning of Scripture",
+      "data": null,
+      "timestamp": "2025-08-15T22:49:13.510Z"
+    },
+    {
+      "name": "Bible Navigation",
+      "passed": true,
+      "message": "Navigation to Bible book successful",
+      "data": null,
+      "timestamp": "2025-08-15T22:49:41.002Z"
+    },
+    {
+      "name": "Random Verse Test: genesis 1:1",
+      "passed": false,
+      "message": "Navigation timeout of 30000 ms exceeded",
+      "data": null,
+      "timestamp": "2025-08-15T22:50:13.278Z"
+    }
+  ],
+  "summary": {
+    "total": 3,
+    "passed": 2,
+    "failed": 1,
+    "errors": [
+      "Random Verse Test: genesis 1:1: Navigation timeout of 30000 ms exceeded",
+      "Test suite error: this.page.waitForTimeout is not a function"
+    ],
+    "duration": "120.67s"
+  },
+  "duration": 120672
+}

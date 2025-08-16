@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { ReportService } from '@/lib/api/reportService';
 import { ErrorState } from '@/components/ui/ErrorState';
+import { BiblicalAnalysisRenderer } from '@/components/analysis/BiblicalAnalysisRenderer';
+import { BiblicalAnalysis } from '@/lib/types/xml-types';
 
 interface ReportDisplayProps {
   bookId: string;
@@ -13,12 +15,39 @@ interface ReportDisplayProps {
 
 export function ReportDisplay({ bookId, chapterNumber, verses }: ReportDisplayProps) {
   const [content, setContent] = useState<string>('');
+  const [analysis, setAnalysis] = useState<BiblicalAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string>('processing');
 
   const bookName = bookId.charAt(0).toUpperCase() + bookId.slice(1);
   const verseReference = ReportService.formatVerseReference(bookName, chapterNumber, verses);
+
+  // Function to validate analysis data structure
+  const validateAnalysisData = (analysis: any): BiblicalAnalysis | null => {
+    try {
+      console.log('🔍 Validating analysis data:', analysis);
+      console.log('🔍 Analysis keys:', Object.keys(analysis || {}));
+      console.log('🔍 Has summary?', !!analysis?.summary);
+      console.log('🔍 Summary keys:', Object.keys(analysis?.summary || {}));
+      
+      // Check for new JSON structure first
+      if (analysis && analysis.summary && analysis.summary.what_is_this_passage_primarily_about) {
+        console.log('✅ Valid new JSON structure detected');
+        return analysis as BiblicalAnalysis;
+      }
+      // Fallback to old XML structure for backward compatibility
+      if (analysis && analysis.passage_overview && analysis.passage_overview.main_theme) {
+        console.log('✅ Valid old XML structure detected');
+        return analysis as BiblicalAnalysis;
+      }
+      console.log('❌ No valid structure found');
+      return null;
+    } catch (error) {
+      console.error('Failed to validate analysis data:', error);
+      return null;
+    }
+  };
 
   const generateReport = useCallback(async () => {
     try {
@@ -33,7 +62,12 @@ export function ReportDisplay({ bookId, chapterNumber, verses }: ReportDisplayPr
         (newStatus) => setStatus(newStatus)
       );
 
-      setContent(report.content || '');
+      const reportContent = report.content || '';
+      setContent(reportContent);
+      
+      // Use analysis data directly from the API response
+      const validatedAnalysis = validateAnalysisData(report.analysis);
+      setAnalysis(validatedAnalysis);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate report');
     } finally {
@@ -121,16 +155,25 @@ export function ReportDisplay({ bookId, chapterNumber, verses }: ReportDisplayPr
       </div>
 
       {/* Content */}
-      <div className="bg-white border border-gray-200 rounded-lg p-8">
-        <div className="prose prose-lg max-w-none">
-          <div 
-            className="leading-relaxed"
-            style={{ whiteSpace: 'pre-wrap' }}
-          >
-            {content}
+      {analysis ? (
+        // Render beautiful structured analysis
+        <BiblicalAnalysisRenderer 
+          analysis={analysis} 
+          verseReference={verseReference} 
+        />
+      ) : (
+        // Fallback to markdown content
+        <div className="bg-white border border-gray-200 rounded-lg p-8">
+          <div className="prose prose-lg max-w-none">
+            <div 
+              className="leading-relaxed"
+              style={{ whiteSpace: 'pre-wrap' }}
+            >
+              {content}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Navigation */}
       <div className="flex justify-center">

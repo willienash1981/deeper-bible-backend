@@ -8,14 +8,21 @@
       "@api/*": ["src/api/*"],
       "@ai/*": ["src/ai/*"],
       "@shared/*": ["src/shared/*"],
-      "@database/*": ["src/database/*"]
-    }
+      "@services/*": ["src/services/*"],
+      "@test-utils/*": ["tests/utils/*"],
+      "@fixtures/*": ["tests/fixtures/*"]
+    },
+    "types": ["node", "jest", "@types/supertest"],
+    "allowJs": true,
+    "isolatedModules": false
   },
   "include": [
     "src/**/*.ts",
     "tests/**/*.ts",
     "**/*.spec.ts",
-    "**/*.test.ts"
+    "**/*.test.ts",
+    "jest.config.ts",
+    "jest.e2e.config.ts"
   ],
   "exclude": [
     "node_modules",

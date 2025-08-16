@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Test Database
+  postgres-test:
+    image: postgres:15
+    container_name: deeper-bible-postgres-test
+    environment:
+      POSTGRES_DB: deeper_bible_test
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5433:5432"  # Different port to avoid conflicts
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d deeper_bible_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Test Cache
+  redis-test:
+    image: redis:7-alpine
+    container_name: deeper-bible-redis-test
+    ports:
+      - "6380:6379"  # Different port to avoid conflicts
+    volumes:
+      - redis_test_data:/data
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    command: redis-server --save "" --appendonly no  # No persistence for tests
+
+  # Test Application
+  app-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: deeper-bible-app-test
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://test:test@postgres-test:5432/deeper_bible_test
+      REDIS_URL: redis://redis-test:6379
+      JWT_SECRET: test-jwt-secret-key-for-testing-only
+      OPENAI_API_KEY: test-openai-key
+      PINECONE_API_KEY: test-pinecone-key
+      PINECONE_ENVIRONMENT: test
+      PINECONE_INDEX: test-index
+      LOG_LEVEL: error
+    ports:
+      - "3001:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - test_coverage:/app/coverage
+    networks:
+      - test-network
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    command: ["npm", "run", "test:e2e"]
+
+  # Test Database Migration Runner
+  migrate-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: deeper-bible-migrate-test
+    environment:
+      DATABASE_URL: postgresql://test:test@postgres-test:5432/deeper_bible_test
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - test-network
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    command: ["npx", "prisma", "migrate", "deploy"]
+
+volumes:
+  postgres_test_data:
+    driver: local
+  redis_test_data:
+    driver: local
+  test_coverage:
+    driver: local
+
+networks:
+  test-network:
+    driver: bridge

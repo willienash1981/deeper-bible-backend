@@ -39,7 +39,7 @@ export function VerseReader({ bookId, chapterNumber }: VerseReaderProps) {
   }, [fetchVerses]);
 
   const formatVerseSelection = (verses: number[]): string => {
-    if (verses.length === 0) return '';
+    if (!verses || verses.length === 0) return '';
     if (verses.length === 1) return verses[0].toString();
     
     // Group consecutive verses into ranges
@@ -121,18 +121,26 @@ export function VerseReader({ bookId, chapterNumber }: VerseReaderProps) {
         />
       </div>
 
-      {/* Go Deeper Button */}
+      {/* Combined Verse Selection & Go Deeper Button */}
       {selectedVerses.length > 0 && (
-        <div className="fixed bottom-20 md:bottom-8 left-1/2 transform -translate-x-1/2 z-40">
-          <Link
-            href={`/deeper/${bookId}/${chapterNumber}/${verseSelectionText}`}
-            className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-full shadow-lg hover:bg-blue-700 hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1"
-          >
-            Go Deeper
-            <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </Link>
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
+          <div className="flex flex-col items-center space-y-2">
+            {/* Verse Count Indicator */}
+            <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium shadow-sm">
+              {selectedVerses.length} verse{selectedVerses.length !== 1 ? 's' : ''} selected
+            </div>
+            
+            {/* Go Deeper Button */}
+            <Link
+              href={`/deeper/${bookId}/${chapterNumber}/${verseSelectionText}`}
+              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-full shadow-lg hover:bg-blue-700 hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1"
+            >
+              Go Deeper
+              <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </Link>
+          </div>
         </div>
       )}
     </div>

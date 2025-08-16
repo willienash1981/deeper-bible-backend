@@ -6,7 +6,7 @@ export class MockFactory {
     return {
       id: faker.string.uuid(),
       email: faker.internet.email(),
-      username: faker.internet.userName(),
+      username: faker.internet.username(),
       firstName: faker.person.firstName(),
       lastName: faker.person.lastName(),
       role: 'user',
@@ -30,12 +30,12 @@ export class MockFactory {
         summary: faker.lorem.paragraph(),
         themes: faker.lorem.words(5).split(' '),
         symbols: faker.lorem.words(3).split(' '),
-        confidence: faker.number.float({ min: 0.7, max: 1.0, precision: 0.01 })
+        confidence: faker.number.float({ min: 0.7, max: 1.0, fractionDigits: 2 })
       },
       metadata: {
         model: 'gpt-4',
         tokens: faker.number.int({ min: 100, max: 5000 }),
-        cost: faker.number.float({ min: 0.01, max: 1.0, precision: 0.001 })
+        cost: faker.number.float({ min: 0.01, max: 1.0, fractionDigits: 3 })
       },
       createdAt: faker.date.past(),
       ...overrides
@@ -105,7 +105,7 @@ export class MockFactory {
       sourceVerse: `${faker.helpers.arrayElement(['Genesis', 'Exodus'])} ${faker.number.int({ min: 1, max: 50 })}:${faker.number.int({ min: 1, max: 30 })}`,
       targetVerse: `${faker.helpers.arrayElement(['Matthew', 'John'])} ${faker.number.int({ min: 1, max: 28 })}:${faker.number.int({ min: 1, max: 30 })}`,
       type: faker.helpers.arrayElement(['quotation', 'allusion', 'parallel', 'typology']),
-      confidence: faker.number.float({ min: 0.5, max: 1.0, precision: 0.01 }),
+      confidence: faker.number.float({ min: 0.5, max: 1.0, fractionDigits: 2 }),
       explanation: faker.lorem.paragraph(),
       ...overrides
     };
@@ -149,18 +149,86 @@ export class MockFactory {
     };
   }
 
-  // Database seed data
-  static async createSeedData(count = 10) {
-    const users = Array.from({ length: count }, () => this.createUser());
-    const analyses = Array.from({ length: count * 3 }, () => 
-      this.createAnalysis({ userId: faker.helpers.arrayElement(users).id })
-    );
-    const symbols = Array.from({ length: 50 }, () => this.createSymbol());
+  // Prisma-compatible data generators
+  static createBook(overrides = {}) {
+    const bookNames = ['Genesis', 'Exodus', 'Psalms', 'Matthew', 'John', 'Romans'];
+    const name = faker.helpers.arrayElement(bookNames);
     
     return {
+      id: faker.string.uuid(),
+      bookNumber: faker.number.int({ min: 1, max: 66 }),
+      name,
+      abbr: name.substring(0, 3).toUpperCase(),
+      testament: faker.helpers.arrayElement(['OLD', 'NEW']),
+      chapterCount: faker.number.int({ min: 1, max: 150 }),
+      bookOrder: faker.number.int({ min: 1, max: 66 }),
+      description: faker.lorem.sentence(),
+      author: faker.person.fullName(),
+      dateWritten: `${faker.number.int({ min: 1000, max: 100 })} BC`,
+      ...overrides
+    };
+  }
+
+  static createReport(overrides = {}) {
+    return {
+      id: faker.string.uuid(),
+      bookId: faker.string.uuid(),
+      chapter: faker.number.int({ min: 1, max: 50 }),
+      verseStart: faker.number.int({ min: 1, max: 30 }),
+      verseEnd: faker.number.int({ min: 1, max: 30 }),
+      reportType: faker.helpers.arrayElement(['DEEPER_ANALYSIS', 'HISTORICAL_CONTEXT', 'SYMBOLIC_PATTERNS']),
+      status: faker.helpers.arrayElement(['PENDING', 'COMPLETED', 'CACHED']),
+      content: {
+        summary: faker.lorem.paragraph(),
+        themes: faker.lorem.words(5).split(' '),
+        symbols: faker.lorem.words(3).split(' ')
+      },
+      userId: faker.string.uuid(),
+      tokens: faker.number.int({ min: 100, max: 5000 }),
+      cost: faker.number.float({ min: 0.01, max: 1.0, fractionDigits: 3 }),
+      model: 'gpt-4',
+      confidence: faker.number.float({ min: 0.7, max: 1.0, fractionDigits: 2 }),
+      processingTime: faker.number.int({ min: 1000, max: 30000 }),
+      createdAt: faker.date.past(),
+      updatedAt: faker.date.recent(),
+      ...overrides
+    };
+  }
+
+  static createSymbolPattern(overrides = {}) {
+    return {
+      id: faker.string.uuid(),
+      symbol: faker.word.noun(),
+      category: faker.helpers.arrayElement(['number', 'color', 'animal', 'object', 'nature']),
+      meaning: faker.lorem.paragraph(),
+      occurrences: faker.number.int({ min: 1, max: 100 }),
+      contexts: [
+        `Genesis ${faker.number.int({ min: 1, max: 50 })}:${faker.number.int({ min: 1, max: 30 })}`,
+        `John ${faker.number.int({ min: 1, max: 21 })}:${faker.number.int({ min: 1, max: 30 })}`
+      ],
+      createdAt: faker.date.past(),
+      updatedAt: faker.date.recent(),
+      ...overrides
+    };
+  }
+
+  // Database seed data
+  static async createSeedData(count = 10) {
+    const books = Array.from({ length: 5 }, () => this.createBook());
+    const users = Array.from({ length: count }, () => this.createUser());
+    const reports = Array.from({ length: count * 2 }, () => 
+      this.createReport({ 
+        userId: faker.helpers.arrayElement(users).id,
+        bookId: faker.helpers.arrayElement(books).id
+      })
+    );
+    const symbolPatterns = Array.from({ length: 20 }, () => this.createSymbolPattern());
+    
+    return {
+      books,
       users,
-      analyses,
-      symbols
+      reports,
+      symbolPatterns
     };
   }
 }

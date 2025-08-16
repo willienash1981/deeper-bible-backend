@@ -10,7 +10,17 @@ export class ReportService {
     verses: string,
     onProgress?: (status: string) => void
   ): Promise<ReportResponse> {
-    // Start report generation
+    // First check if a completed report already exists
+    onProgress?.('checking cache');
+    const existingCheck = await bibleAPI.checkExistingReport(bookId, chapter, verses);
+    
+    if (existingCheck.exists && existingCheck.report) {
+      onProgress?.('found cached report');
+      return existingCheck.report;
+    }
+
+    // No existing report found, generate a new one
+    onProgress?.('generating new report');
     const initialResponse = await bibleAPI.generateReport(bookId, chapter, verses);
     
     if (initialResponse.status === 'completed') {

@@ -1,4 +1,4 @@
-import openai from '../services/openai-client';
+import { openai } from '../services/openai-client';
 import { createLogger } from '../../utils/logger';
 import { validateInput } from '../../utils/validation';
 import { Logger } from 'winston';
@@ -112,23 +112,20 @@ export class ContentModerationService {
    */
   private async checkWithOpenAI(content: string): Promise<ModerationResult> {
     try {
-      const response = await openai.moderations.create({
-        input: content,
-      });
+      const moderationResponse = await openai.moderateContent(content);
 
-      const result = response.results[0];
       const flaggedCategories: string[] = [];
       const scores: Record<string, number> = {};
 
       // Check each category
-      Object.entries(result.categories).forEach(([category, flagged]) => {
+      Object.entries(moderationResponse.categories).forEach(([category, flagged]) => {
         if (flagged) {
           flaggedCategories.push(category);
         }
       });
 
       // Record scores
-      Object.entries(result.category_scores).forEach(([category, score]) => {
+      Object.entries(moderationResponse.categoryScores).forEach(([category, score]) => {
         scores[category] = score as number;
         // Also flag if score is above threshold (even if not flagged by OpenAI)
         if ((score as number) > 0.8 && !flaggedCategories.includes(category)) {
@@ -137,7 +134,7 @@ export class ContentModerationService {
       });
 
       return {
-        flagged: flaggedCategories.length > 0,
+        flagged: flaggedCategories.length > 0 || moderationResponse.flagged,
         categories: flaggedCategories,
         scores,
         explanation: flaggedCategories.length > 0 
@@ -306,7 +303,9 @@ export class ContentModerationService {
     if (this.cache.size >= this.cacheMaxSize) {
       // Remove oldest entry
       const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey);
+      }
     }
     this.cache.set(key, result);
   }

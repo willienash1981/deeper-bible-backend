@@ -1,18 +1,17 @@
 import { BUDGET_LIMITS, THROTTLING_SETTINGS } from '../config/budget';
 import { CostTracker } from './cost-tracker';
 import Redis from 'ioredis';
-import { logger } from '../../utils/logger';
+import { createLogger } from '../../utils/logger';
 import { validateInput } from '../../utils/validation';
 
 export class BudgetController {
   private costTracker: CostTracker;
   private redis: Redis;
-  private logger = logger;
+  private logger = createLogger('BudgetController');
 
   constructor() {
     this.costTracker = new CostTracker();
     this.redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
-      retryDelayOnFailover: 100,
       maxRetriesPerRequest: 3,
       lazyConnect: true,
     });
