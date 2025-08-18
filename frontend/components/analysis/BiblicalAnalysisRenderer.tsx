@@ -33,93 +33,119 @@ const getCategoryIcon = (category: string) => {
 
 export function BiblicalAnalysisRenderer({ analysis, verseReference, verseText }: BiblicalAnalysisRendererProps) {
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      {/* SEO-Optimized Header */}
-      <header className="text-center space-y-4">
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100">
-          Biblical Analysis: {verseReference}
-        </h1>
-        <p className="text-lg text-muted-foreground">
-          Deep insights and theological analysis powered by AI
-        </p>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950">
+      <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
+        {/* SEO-Optimized Header */}
+        <header className="text-center space-y-6 py-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 mb-4">
+            <BookOpen className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Biblical Analysis: {verseReference}
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Deep insights and theological analysis powered by AI to help you discover a deeper understanding of God's Word
+          </p>
+          <Separator className="max-w-md mx-auto" />
+        </header>
 
-      {/* Scripture Text Card */}
-      {verseText && (
-        <Card className="border-l-4 border-l-gold border-yellow-500 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-950 dark:to-orange-950">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
-              <BookOpen className="w-5 h-5" />
-              Scripture Text
-            </CardTitle>
-            <CardDescription className="text-yellow-700 dark:text-yellow-300">
-              {verseReference} (NIV)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <blockquote className="text-lg leading-relaxed font-medium text-gray-800 dark:text-gray-200 italic border-l-4 border-yellow-400 pl-4">
-              "{verseText}"
-            </blockquote>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Simplified Scripture Card */}
-      {(analysis as any).simplified_scripture?.paraphrase_for_clarity && (
-        <Card className="border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-800 dark:text-green-200">
-              <MessageSquare className="w-5 h-5" />
-              Simplified Version
-            </CardTitle>
-            <CardDescription className="text-green-700 dark:text-green-300">
-              Modern English for clarity
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <blockquote className="text-lg leading-relaxed font-medium text-gray-800 dark:text-gray-200 italic border-l-4 border-green-400 pl-4 mb-4">
-              "{(analysis as any).simplified_scripture.paraphrase_for_clarity}"
-            </blockquote>
-            <p className="text-sm text-muted-foreground">
-              <strong>Why this helps:</strong> {(analysis as any).simplified_scripture.why_this_helps}
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Passage Overview Card */}
-      {(analysis.passage_overview || analysis.summary) && (
-        <Card className="border-l-4 border-l-blue-500">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="w-5 h-5" />
-                Passage Overview
-              </CardTitle>
-              {(analysis.passage_overview?.difficulty_level || analysis.summary?.difficulty_level) && (
-                <Badge className={getDifficultyColor(analysis.passage_overview?.difficulty_level || analysis.summary?.difficulty_level)}>
-                  {analysis.passage_overview?.difficulty_level || analysis.summary?.difficulty_level}
+        {/* Scripture Text Card - Featured Section */}
+        {verseText && (
+          <Card className="relative overflow-hidden border-2 border-amber-200 dark:border-amber-800 shadow-xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 via-yellow-50/30 to-orange-50/50 dark:from-amber-950/50 dark:via-yellow-950/30 dark:to-orange-950/50" />
+            <CardHeader className="relative">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-3 text-amber-800 dark:text-amber-200 text-2xl">
+                  <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center">
+                    <BookOpen className="w-5 h-5 text-white" />
+                  </div>
+                  Scripture Text
+                </CardTitle>
+                <Badge className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900 dark:text-amber-200">
+                  {verseReference} (NIV)
                 </Badge>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <h3 className="font-semibold text-lg mb-2">Main Theme</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                {analysis.passage_overview?.main_theme || analysis.summary?.what_is_this_passage_primarily_about}
-              </p>
-            </div>
-            <Separator />
-            <div>
-              <h3 className="font-semibold text-lg mb-2">Key Message</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                {analysis.passage_overview?.key_message || analysis.summary?.core_message_in_simple_terms}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              </div>
+            </CardHeader>
+            <CardContent className="relative">
+              <div className="bg-white/70 dark:bg-slate-900/70 rounded-lg p-6 border border-amber-200/50 dark:border-amber-800/50">
+                <blockquote className="text-xl md:text-2xl leading-relaxed font-serif text-center text-gray-800 dark:text-gray-200 italic">
+                  "{verseText}"
+                </blockquote>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Simplified Scripture Card */}
+        {(analysis as any).simplified_scripture?.paraphrase_for_clarity && (
+          <Card className="relative overflow-hidden border-2 border-emerald-200 dark:border-emerald-800 shadow-lg">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 via-green-50/30 to-teal-50/50 dark:from-emerald-950/50 dark:via-green-950/30 dark:to-teal-950/50" />
+            <CardHeader className="relative">
+              <CardTitle className="flex items-center gap-3 text-emerald-800 dark:text-emerald-200 text-xl">
+                <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center">
+                  <MessageSquare className="w-4 h-4 text-white" />
+                </div>
+                Simplified Version
+              </CardTitle>
+              <CardDescription className="text-emerald-700 dark:text-emerald-300 text-base">
+                Modern English for clarity and understanding
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="relative space-y-4">
+              <div className="bg-white/70 dark:bg-slate-900/70 rounded-lg p-4 border border-emerald-200/50 dark:border-emerald-800/50">
+                <blockquote className="text-lg leading-relaxed font-medium text-gray-800 dark:text-gray-200 italic">
+                  "{(analysis as any).simplified_scripture.paraphrase_for_clarity}"
+                </blockquote>
+              </div>
+              <div className="bg-emerald-50/70 dark:bg-emerald-950/70 rounded-lg p-3 border border-emerald-200/50 dark:border-emerald-800/50">
+                <p className="text-sm text-emerald-800 dark:text-emerald-200">
+                  <strong>Why this helps:</strong> {(analysis as any).simplified_scripture.why_this_helps}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Main Analysis Content Grid */}
+        <div className="grid gap-6 lg:gap-8">
+          
+          {/* Passage Overview Card */}
+          {(analysis.passage_overview || analysis.summary) && (
+            <Card className="relative overflow-hidden border-2 border-blue-200 dark:border-blue-800 shadow-lg">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-indigo-50/30 to-purple-50/50 dark:from-blue-950/50 dark:via-indigo-950/30 dark:to-purple-950/50" />
+              <CardHeader className="relative">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-3 text-blue-800 dark:text-blue-200 text-xl">
+                    <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+                      <BookOpen className="w-4 h-4 text-white" />
+                    </div>
+                    Passage Overview
+                  </CardTitle>
+                  {(analysis.passage_overview?.difficulty_level || analysis.summary?.difficulty_level) && (
+                    <Badge className={getDifficultyColor(analysis.passage_overview?.difficulty_level || analysis.summary?.difficulty_level)}>
+                      {analysis.passage_overview?.difficulty_level || analysis.summary?.difficulty_level}
+                    </Badge>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="relative space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="bg-white/70 dark:bg-slate-900/70 rounded-lg p-4 border border-blue-200/50 dark:border-blue-800/50">
+                    <h3 className="font-semibold text-lg mb-3 text-blue-900 dark:text-blue-100">Main Theme</h3>
+                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                      {analysis.passage_overview?.main_theme || analysis.summary?.what_is_this_passage_primarily_about}
+                    </p>
+                  </div>
+                  <div className="bg-white/70 dark:bg-slate-900/70 rounded-lg p-4 border border-blue-200/50 dark:border-blue-800/50">
+                    <h3 className="font-semibold text-lg mb-3 text-blue-900 dark:text-blue-100">Key Message</h3>
+                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                      {analysis.passage_overview?.key_message || analysis.summary?.core_message_in_simple_terms}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
       {/* Cultural Context Card */}
       {(analysis.cultural_context || (analysis as any).context?.historical_cultural_background) && (
@@ -676,25 +702,39 @@ export function BiblicalAnalysisRenderer({ analysis, verseReference, verseText }
         </Card>
       )}
 
-      {/* Footer */}
-      <footer className="text-center py-8 text-sm text-muted-foreground border-t bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950 rounded-lg mt-6">
-        <div className="max-w-2xl mx-auto space-y-3">
-          <p className="font-medium text-amber-800 dark:text-amber-200">
-            ⚠️ Never take this information as true gospel.
-          </p>
-          <p className="leading-relaxed text-gray-700 dark:text-gray-300">
-            It's up to you, the reader, to dig into the Bible and ask the Holy Spirit for revelation and truth. 
-            This is just a guide to help you search into a <strong>Deeper Bible</strong>.
-          </p>
-          <p className="text-xs text-amber-700 dark:text-amber-300 italic">
-            "Study to show yourself approved unto God, a workman that needs not to be ashamed, 
-            rightly dividing the word of truth." - 2 Timothy 2:15
-          </p>
-          <p className="text-xs">
-            Continue to study with prayer, the Holy Spirit's guidance, and in community with other believers.
-          </p>
         </div>
-      </footer>
+        
+        {/* Footer */}
+        <footer className="mt-12 mb-8">
+          <Card className="relative overflow-hidden border-2 border-amber-200 dark:border-amber-800 shadow-lg">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 via-orange-50/30 to-red-50/50 dark:from-amber-950/50 dark:via-orange-950/30 dark:to-red-950/50" />
+            <CardContent className="relative text-center py-8">
+              <div className="max-w-2xl mx-auto space-y-4">
+                <div className="w-12 h-12 rounded-full bg-amber-500 flex items-center justify-center mx-auto mb-4">
+                  <MessageSquare className="w-6 h-6 text-white" />
+                </div>
+                <p className="text-lg font-semibold text-amber-800 dark:text-amber-200">
+                  ⚠️ Never take this information as true gospel.
+                </p>
+                <p className="text-base leading-relaxed text-gray-700 dark:text-gray-300">
+                  It's up to you, the reader, to dig into the Bible and ask the Holy Spirit for revelation and truth. 
+                  This is just a guide to help you search into a <strong className="text-amber-800 dark:text-amber-200">Deeper Bible</strong>.
+                </p>
+                <div className="bg-white/70 dark:bg-slate-900/70 rounded-lg p-4 border border-amber-200/50 dark:border-amber-800/50">
+                  <p className="text-sm text-amber-700 dark:text-amber-300 italic font-medium">
+                    "Study to show yourself approved unto God, a workman that needs not to be ashamed, 
+                    rightly dividing the word of truth." - 2 Timothy 2:15
+                  </p>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Continue to study with prayer, the Holy Spirit's guidance, and in community with other believers.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </footer>
+        
+      </div>
     </div>
   );
 }
